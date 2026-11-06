@@ -113,7 +113,7 @@ if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWo
    et restent sur ce Natel, chiffrées avec le code de verrouillage. */
 const M = (() => {
   const ITER = 210000, AUTOLOCK_MIN = 10;
-  let cfg, key = null, st = null, dl = null, memOnly = false, hiddenAt = 0, pendingLien = null, syncing = false;
+  let cfg, key = null, st = null, dl = null, memOnly = false, hiddenAt = 0, pendingLien = null, syncing = false, pushing = false;
   let view = { n: 'home', a: null }, stack = [], ui = {};
   const app = () => document.getElementById('app');
 
@@ -230,42 +230,82 @@ const M = (() => {
 
   /* ---------- mise à jour automatique : paquet chiffré publié par l'ordinateur à côté de l'application ----------
      Format MT1 : « MT1 » | sel (16) | iv (16) | données AES-256-CBC (JSON compressé gzip) | HMAC-SHA256 (32). Clés : PBKDF2-SHA256(clé de liaison, sel, 100 000) → 64 octets. */
+  async function mt1Km(pass, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, base, 512));
+  }
+  async function mt1Enc(text, pass) {
+    const z = new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+    const salt = rnd(16), iv = rnd(16), km = await mt1Km(pass, salt);
+    const ek = await crypto.subtle.importKey('raw', km.slice(0, 32), { name: 'AES-CBC' }, false, ['encrypt']);
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-CBC', iv }, ek, z));
+    const body = new Uint8Array(35 + ct.length); body.set([77, 84, 49]); body.set(salt, 3); body.set(iv, 19); body.set(ct, 35);
+    const mk = await crypto.subtle.importKey('raw', km.slice(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const mac = new Uint8Array(await crypto.subtle.sign('HMAC', mk, body));
+    const out = new Uint8Array(body.length + 32); out.set(body); out.set(mac, body.length); return out;
+  }
+  /* ---------- notes : elles partent toutes seules vers My Tibo sur l'ordinateur (chiffrées, par GitHub), puis disparaissent d'ici une fois arrivées ---------- */
+  const ghH = () => ({ Authorization: 'Bearer ' + st.notesTok, Accept: 'application/vnd.github+json' });
+  const notesAuto = () => !!(cfg.notesRepo && st && st.syncKey && st.notesTok);
+  async function pushNotes() {
+    if (!notesAuto() || pushing) return; pushing = true; let n0 = 0;
+    try {
+      for (const n of st.notes.filter(x => !x.sent)) {
+        const blob = await mt1Enc(JSON.stringify({ v: 1, app: cfg.id, id: n.id, d: n.d, dom: n.dom || '', domLabel: n.dom && cfg.noteDomains[n.dom] ? t(cfg.noteDomains[n.dom]) : '', ref: n.ref || null, text: n.text }), st.syncKey);
+        const r = await fetch(`https://api.github.com/repos/${cfg.notesRepo}/issues`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, ghH()), body: JSON.stringify({ title: 'natel-note ' + cfg.id, body: b64(blob) }) });
+        if (r.status === 401 || r.status === 403 || r.status === 404) { st.notesErr = 'jeton'; break }
+        if (!r.ok) break;
+        const j = await r.json(); n.sent = j.number; st.notesErr = ''; n0++;
+      }
+      await save();
+    } catch (e) { } finally { pushing = false }
+    if (n0 && view.n === 'notes') render();
+  }
+  async function checkReceipts() {
+    if (!notesAuto()) return; const S = st.notes.filter(x => x.sent); if (!S.length) return; let gone = 0;
+    for (const n of S) { try { const r = await fetch(`https://api.github.com/repos/${cfg.notesRepo}/issues/${n.sent}?t=${Date.now()}`, { headers: ghH(), cache: 'no-store' }); if (!r.ok) continue; const j = await r.json(); if (j.state === 'closed') { st.notes = st.notes.filter(x => x !== n); gone++ } } catch (e) { } }
+    if (gone) { await save(); toast(t('notes_arrived', { n: gone })); if (['notes', 'home'].includes(view.n)) render() }
+  }
+  async function notesSync() { await pushNotes(); await checkReceipts() }
   async function autoSync(force) {
     if (!cfg.autoSync || !st || !st.syncKey || syncing) return;
-    if (!force && st.syncAt && Date.now() - Date.parse(st.syncAt) < 10 * 60e3) return;
+    if (!force && st.syncAt && Date.now() - Date.parse(st.syncAt) < 10 * 60e3) { notesSync(); return }
     syncing = true;
     try {
       const r = await fetch(cfg.autoSync + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('net');
       const b = new Uint8Array(await r.arrayBuffer());
       if (b.length < 100 || String.fromCharCode(b[0], b[1], b[2]) !== 'MT1') throw new Error('fmt');
       const salt = b.slice(3, 19), iv = b.slice(19, 35), ct = b.slice(35, b.length - 32), mac = b.slice(b.length - 32);
-      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(st.syncKey), 'PBKDF2', false, ['deriveBits']);
-      const km = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, base, 512));
+      const km = await mt1Km(st.syncKey, salt);
       const mk = await crypto.subtle.importKey('raw', km.slice(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
       if (!await crypto.subtle.verify('HMAC', mk, mac, b.slice(0, b.length - 32))) { st.syncErr = 'cle'; await save(); return }
       const ek = await crypto.subtle.importKey('raw', km.slice(0, 32), { name: 'AES-CBC' }, false, ['decrypt']);
       const z = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, ek, ct);
-      const text = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      let text = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      if (/^\{\s*"app"\s*:\s*"natel-lien"/.test(text)) { const w = JSON.parse(text); if (w.jeton) st.notesTok = w.jeton; else delete st.notesTok; text = w.paquet ? JSON.stringify(w.paquet) : '' }
       const made = (text.match(/"made"\s*:\s*"([^"]+)"/) || [])[1] || '';
       st.syncAt = new Date().toISOString(); st.syncErr = '';
-      if (made !== st.syncMade) { st.syncMade = made; await importFiles([new File([text], cfg.bundle)], true) } else { await save(); if (view.n === 'donnees') render() }
+      if (!text) { await save(); if (view.n === 'donnees') render() }
+      else if (made !== st.syncMade) { st.syncMade = made; await importFiles([new File([text], cfg.bundle)], true) } else { await save(); if (view.n === 'donnees') render() }
     } catch (e) { if (st) { st.syncErr = 'reseau'; if (view.n === 'donnees') render() } }
     finally { syncing = false }
+    notesSync();
   }
   function syncCard() {
     if (!cfg.autoSync || !st) return '';
     const when = st.syncAt ? new Date(st.syncAt).toLocaleString(lang() === 'de' ? 'de-CH' : 'fr-CH', { dateStyle: 'short', timeStyle: 'short' }) : '–';
-    if (st.syncKey) return `<section class="card"><b>${t('auto_title')} <span class="chip ok">${t('auto_active')}</span></b><span class="small muted">${t('auto_on', { d: when })}</span>
+    const NO = cfg.notesOnly;
+    if (st.syncKey) return `<section class="card"><b>${t(NO ? 'auto_title_n' : 'auto_title')} <span class="chip ok">${t('auto_active')}</span></b><span class="small muted">${NO ? t('auto_on_n', { d: when }) : t('auto_on', { d: when })}</span>
       ${st.syncErr === 'cle' ? `<p class="note warn">${t('auto_badkey')}</p>` : st.syncErr === 'reseau' ? `<span class="small muted">${t('auto_net')}</span>` : ''}
       <div class="bar"><button class="btn" data-a="syncnow">${t('auto_now')}</button><button class="btn sm" data-a="unlink">${t('auto_off')}</button></div></section>`;
-    return `<section class="card"><b>${t('auto_title')}</b><span class="small muted">${t('auto_how')}</span>
+    return `<section class="card"><b>${t(NO ? 'auto_title_n' : 'auto_title')}</b><span class="small muted">${t(NO ? 'auto_how_n' : 'auto_how')}</span>
       <input id="lienkey" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX">
       <button class="btn pri" data-a="link">${t('auto_link')}</button></section>`;
   }
   async function linkWith(k) {
     k = String(k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (!/^[A-Z2-9]{24}$/.test(k)) { toast(t('auto_badfmt')); return false }
-    st.syncKey = k; st.syncAt = ''; st.syncMade = ''; st.syncErr = ''; await save(); toast(t('auto_linked')); await autoSync(true); render(); return true;
+    st.syncKey = k; st.syncAt = ''; st.syncMade = ''; st.syncErr = ''; await save(); toast(t(cfg.notesOnly ? 'auto_linked_n' : 'auto_linked')); await autoSync(true); render(); return true;
   }
 
   /* ---------- import de fichiers ---------- */
@@ -358,7 +398,7 @@ const M = (() => {
     const open = st.notes.filter(n => !n.done), done = st.notes.filter(n => n.done);
     const doms = Object.entries(cfg.noteDomains);
     const p = pref && typeof pref === 'object' ? pref : {};
-    const row = n => `<div class="row"><div class="m"><small>${fmtD(n.d.slice(0, 10))} · ${n.d.slice(11, 16)}${n.dom && cfg.noteDomains[n.dom] ? ' · ' + t(cfg.noteDomains[n.dom]) : ''}${n.ref ? ' · ' + esc(n.ref.label) : ''}</small><span class="txt" ${n.done ? 'style="text-decoration:line-through;opacity:.6"' : ''}>${esc(n.text)}</span></div>
+    const row = n => `<div class="row"><div class="m"><small>${fmtD(n.d.slice(0, 10))} · ${n.d.slice(11, 16)}${n.dom && cfg.noteDomains[n.dom] ? ' · ' + t(cfg.noteDomains[n.dom]) : ''}${n.ref ? ' · ' + esc(n.ref.label) : ''}</small><span class="txt" ${n.done ? 'style="text-decoration:line-through;opacity:.6"' : ''}>${esc(n.text)}</span>${notesAuto() ? `<small>${n.sent ? `<span class="chip ok">${t('note_sent')}</span>` : `<span class="chip amber">${t('note_wait')}</span>`}</small>` : ''}</div>
       <div class="s"><button class="btn sm" data-a="notedone" data-id="${n.id}">${n.done ? t('reopen') : t('done')}</button><button class="btn sm danger" data-a="notedel" data-id="${n.id}">${t('del')}</button></div></div>`;
     return `<h1>${t('notes')}</h1>
     <form class="card" id="notef" data-ref='${p.ref ? esc(JSON.stringify(p.ref)) : ''}'>
@@ -369,13 +409,13 @@ const M = (() => {
     </form>
     <section class="sec"><div class="sec-h"><h3>${t('to_handle')} · ${open.length}</h3></div>
       <div class="list">${open.length ? open.map(row).join('') : `<div class="empty">${t('no_notes')}</div>`}</div></section>
-    <section class="card"><b>${t('notes_send')}</b><span class="small muted">${t('notes_send_txt')}</span>
+    <section class="card"><b>${t('notes_send')}</b><span class="small muted">${notesAuto() ? t('notes_auto') : t('notes_send_txt')}</span>${st.notesErr === 'jeton' ? `<p class="note warn">${t('notes_tokbad')}</p>` : ''}
       <div class="bar"><button class="btn" data-a="copy" data-from="notesexport">${t('copy_all')}</button>${dl || navigator.share ? `<button class="btn" data-a="notesfile">${navigator.share && !dl ? t('share') : t('save_file')}</button>` : ''}</div>
       <textarea id="notesexport" readonly hidden>${esc(notesText(true))}</textarea></section>
     ${done.length ? `<section class="sec"><div class="sec-h"><h3>${t('handled')} · ${done.length}</h3><button class="linkbtn" data-a="notepurge">${t('purge_done')}</button></div><div class="list">${done.map(row).join('')}</div></section>` : ''}`;
   }
   async function noteActions(a, el) {
-    if (a === 'noteadd') { const tx = document.getElementById('notetext').value.trim(); if (!tx) { toast(t('note_empty')); return } const r = document.getElementById('notef').dataset.ref; await addNote(tx, document.getElementById('notedom').value, r ? JSON.parse(r) : null); view.a = null; render(); toast(t('note_saved')); return true }
+    if (a === 'noteadd') { const tx = document.getElementById('notetext').value.trim(); if (!tx) { toast(t('note_empty')); return } const r = document.getElementById('notef').dataset.ref; await addNote(tx, document.getElementById('notedom').value, r ? JSON.parse(r) : null); view.a = null; render(); toast(t('note_saved')); pushNotes(); return true }
     if (a === 'notedone') { const n = st.notes.find(x => x.id === el.dataset.id); if (n) { n.done = !n.done; await save(); render() } return true }
     if (a === 'notedel') { if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = t('del_sure'); return true } st.notes = st.notes.filter(x => x.id !== el.dataset.id); await save(); render(); return true }
     if (a === 'notepurge') { st.notes = st.notes.filter(x => !x.done); await save(); render(); return true }
@@ -481,7 +521,7 @@ const CORE_T = {
     nav: 'Navigation', back: 'Retour', lock: 'Verrouiller', lock_now: 'Verrouiller maintenant', code: 'Code de verrouillage', code_new: 'Choisissez un code de verrouillage (au moins 4 caractères)', code_again: 'Répétez le code', unlock: 'Ouvrir', create: 'Créer et continuer',
     lock_intro: 'Entrez votre code pour ouvrir les données de ce Natel.', first_intro: 'Première ouverture sur ce Natel.', first_note: 'Le code protège les données enregistrées sur ce Natel. Sans lui, elles ne peuvent pas être lues. Il n’est enregistré nulle part : si vous l’oubliez, il suffit de tout effacer et de recharger les fichiers.',
     code_short: 'Au moins 4 caractères.', code_mismatch: 'Les deux codes ne sont pas identiques.', code_wrong: 'Code incorrect.', working: 'Un instant…', forgot: 'Code oublié ?', forgot_txt: 'Les données de ce Natel ne peuvent pas être récupérées sans le code. Vous pouvez tout effacer ici, puis recharger les fichiers depuis OneDrive. Rien n’est perdu sur l’ordinateur.', wipe_all: 'Tout effacer de ce Natel', wipe_sure: 'Effacer toutes les données et les notes de ce Natel ?', wipe_yes: 'Oui, effacer',
-    auto_title: 'Mise à jour automatique', auto_active: 'active', auto_on: 'À chaque ouverture, l’application va chercher les nouvelles données préparées par l’ordinateur. Dernière vérification : {d}.', auto_net: 'Pas de connexion au dernier essai : les données déjà sur ce Natel restent utilisables.', auto_badkey: 'La clé ne correspond plus à celle de l’ordinateur. Touchez « Arrêter », puis reliez à nouveau ce Natel.', auto_now: 'Vérifier maintenant', auto_off: 'Arrêter', auto_how: 'Une seule fois : sur l’ordinateur, ouvrir My Tibo › Mes ordinateurs › « Natel », puis scanner le code avec l’appareil photo. Ou taper ici la clé de liaison.', auto_link: 'Relier ce Natel', auto_linked: 'Natel relié : les données se mettront à jour toutes seules.', auto_badfmt: 'Clé incomplète : 24 lettres et chiffres.', auto_done: 'Données mises à jour automatiquement.', store_fail: 'Ce Natel ne permet pas d’enregistrer : les données restent seulement jusqu’à la fermeture.', imported: 'Chargé : {n}', ignored: '{n} fichier(s) non reconnu(s)', nothing_imported: 'Aucun fichier reconnu. Choisissez les fichiers indiqués ci-dessous.',
+    note_sent: '📤 envoyée à l’ordinateur', note_wait: 'en attente d’envoi', notes_arrived: '{n} note(s) arrivée(s) sur l’ordinateur.', notes_auto: 'Les notes partent toutes seules vers l’ordinateur (page d’accueil, « Notes du Natel »). Une fois arrivées, elles disparaissent d’ici.', auto_title_n: 'Notes vers l’ordinateur', auto_on_n: 'Les notes prises ici partent toutes seules vers l’ordinateur, puis disparaissent d’ici. Dernière vérification : {d}.', auto_how_n: 'Une seule fois : sur l’ordinateur, ouvrir My Tibo › Mes ordinateurs › « Natel », puis scanner le code « MyWil » avec l’appareil photo. Ou taper ici la clé de liaison.', auto_linked_n: 'Natel relié : les notes partiront toutes seules vers l’ordinateur.', notes_tokbad: 'GitHub refuse l’envoi des notes : renouveler la clé des notes sur l’ordinateur (Mes ordinateurs › Natel).', auto_title: 'Mise à jour automatique', auto_active: 'active', auto_on: 'À chaque ouverture, l’application va chercher les nouvelles données préparées par l’ordinateur. Dernière vérification : {d}.', auto_net: 'Pas de connexion au dernier essai : les données déjà sur ce Natel restent utilisables.', auto_badkey: 'La clé ne correspond plus à celle de l’ordinateur. Touchez « Arrêter », puis reliez à nouveau ce Natel.', auto_now: 'Vérifier maintenant', auto_off: 'Arrêter', auto_how: 'Une seule fois : sur l’ordinateur, ouvrir My Tibo › Mes ordinateurs › « Natel », puis scanner le code avec l’appareil photo. Ou taper ici la clé de liaison.', auto_link: 'Relier ce Natel', auto_linked: 'Natel relié : les données se mettront à jour toutes seules.', auto_badfmt: 'Clé incomplète : 24 lettres et chiffres.', auto_done: 'Données mises à jour automatiquement.', store_fail: 'Ce Natel ne permet pas d’enregistrer : les données restent seulement jusqu’à la fermeture.', imported: 'Chargé : {n}', ignored: '{n} fichier(s) non reconnu(s)', nothing_imported: 'Aucun fichier reconnu. Choisissez les fichiers indiqués ci-dessous.',
     notes: 'Notes', note_new: 'Nouvelle note', note_ph: 'Ce que vous voulez reprendre à l’ordinateur…', no_domain: 'Sans domaine', save: 'Enregistrer', to_handle: 'À reprendre', handled: 'Reprises', no_notes: 'Aucune note en attente.', done: 'Reprise', reopen: 'Rouvrir', del: 'Supprimer', del_sure: 'Sûr ?', purge_done: 'Supprimer les notes reprises',
     notes_send: 'Envoyer les notes vers l’ordinateur', notes_send_txt: 'Copiez les notes en attente puis collez-les dans un courriel, OneNote ou Teams ; ou enregistrez-les comme fichier dans OneDrive.', copy_all: 'Copier les notes', save_file: 'Enregistrer comme fichier', copied: 'Copié.', copy_manual: 'Sélectionnez le texte et copiez-le.', save_declined: 'Enregistrement annulé.', note_empty: 'La note est vide.', note_saved: 'Note enregistrée.',
     data: 'Données', update_title: 'Mettre à jour les données', update_txt: 'Touchez le bouton, puis choisissez dans OneDrive FSSPX › dossier « Natel » le fichier {f}. L’ordinateur le tient à jour tout seul. Il reste sur ce Natel, chiffré.', other_files: 'On peut aussi choisir directement les fichiers d’origine, un ou plusieurs à la fois.', stale: 'Les données datent d’il y a {n} jours. Touchez ici pour les mettre à jour.', choose_files: 'Choisir les fichiers', sources: 'Fichiers', file_of: 'Fichier du', loaded_on: 'chargé le', up_to_date: 'à jour', old_days: 'il y a {n} jours', missing: 'pas encore chargé',
@@ -495,7 +535,7 @@ const CORE_T = {
     nav: 'Navigation', back: 'Zurück', lock: 'Sperren', lock_now: 'Jetzt sperren', code: 'Sperrcode', code_new: 'Wählen Sie einen Sperrcode (mindestens 4 Zeichen)', code_again: 'Code wiederholen', unlock: 'Öffnen', create: 'Anlegen und weiter',
     lock_intro: 'Geben Sie Ihren Code ein, um die Daten auf diesem Handy zu öffnen.', first_intro: 'Erstes Öffnen auf diesem Handy.', first_note: 'Der Code schützt die auf diesem Handy gespeicherten Daten. Ohne ihn sind sie nicht lesbar. Er wird nirgends gespeichert: Wenn Sie ihn vergessen, alles löschen und die Dateien neu laden.',
     code_short: 'Mindestens 4 Zeichen.', code_mismatch: 'Die beiden Codes stimmen nicht überein.', code_wrong: 'Falscher Code.', working: 'Einen Moment…', forgot: 'Code vergessen?', forgot_txt: 'Ohne Code lassen sich die Daten dieses Handys nicht wiederherstellen. Sie können hier alles löschen und die Dateien aus OneDrive neu laden. Auf dem Computer geht nichts verloren.', wipe_all: 'Alles auf diesem Handy löschen', wipe_sure: 'Alle Daten und Notizen auf diesem Handy löschen?', wipe_yes: 'Ja, löschen',
-    auto_title: 'Automatische Aktualisierung', auto_active: 'aktiv', auto_on: 'Bei jedem Öffnen holt die App die neuen Daten, die der Computer vorbereitet. Letzte Prüfung: {d}.', auto_net: 'Beim letzten Versuch keine Verbindung: die Daten auf diesem Handy bleiben nutzbar.', auto_badkey: 'Der Schlüssel passt nicht mehr zum Computer. «Beenden» antippen und das Handy neu verbinden.', auto_now: 'Jetzt prüfen', auto_off: 'Beenden', auto_how: 'Einmalig: am Computer My Tibo › Meine Computer › «Natel» öffnen und den Code mit der Kamera scannen. Oder hier den Verbindungsschlüssel eingeben.', auto_link: 'Handy verbinden', auto_linked: 'Handy verbunden: die Daten aktualisieren sich von selbst.', auto_badfmt: 'Schlüssel unvollständig: 24 Buchstaben und Ziffern.', auto_done: 'Daten automatisch aktualisiert.', store_fail: 'Dieses Handy erlaubt kein Speichern: Die Daten bleiben nur bis zum Schliessen.', imported: 'Geladen: {n}', ignored: '{n} Datei(en) nicht erkannt', nothing_imported: 'Keine Datei erkannt. Wählen Sie die unten genannten Dateien.',
+    note_sent: '📤 an den Computer gesendet', note_wait: 'wartet auf Versand', notes_arrived: '{n} Notiz(en) im Computer angekommen.', notes_auto: 'Die Notizen gehen von selbst an den Computer (Startseite, «Notizen vom Handy»). Sobald sie angekommen sind, verschwinden sie hier.', auto_title_n: 'Notizen an den Computer', auto_on_n: 'Die hier erfassten Notizen gehen von selbst an den Computer und verschwinden dann hier. Letzte Prüfung: {d}.', auto_how_n: 'Einmalig: am Computer My Tibo › Meine Computer › «Natel» öffnen und den Code «MyWil» mit der Kamera scannen. Oder hier den Verbindungsschlüssel eingeben.', auto_linked_n: 'Handy verbunden: die Notizen gehen von selbst an den Computer.', notes_tokbad: 'GitHub verweigert den Versand der Notizen: den Notizen-Schlüssel am Computer erneuern.', auto_title: 'Automatische Aktualisierung', auto_active: 'aktiv', auto_on: 'Bei jedem Öffnen holt die App die neuen Daten, die der Computer vorbereitet. Letzte Prüfung: {d}.', auto_net: 'Beim letzten Versuch keine Verbindung: die Daten auf diesem Handy bleiben nutzbar.', auto_badkey: 'Der Schlüssel passt nicht mehr zum Computer. «Beenden» antippen und das Handy neu verbinden.', auto_now: 'Jetzt prüfen', auto_off: 'Beenden', auto_how: 'Einmalig: am Computer My Tibo › Meine Computer › «Natel» öffnen und den Code mit der Kamera scannen. Oder hier den Verbindungsschlüssel eingeben.', auto_link: 'Handy verbinden', auto_linked: 'Handy verbunden: die Daten aktualisieren sich von selbst.', auto_badfmt: 'Schlüssel unvollständig: 24 Buchstaben und Ziffern.', auto_done: 'Daten automatisch aktualisiert.', store_fail: 'Dieses Handy erlaubt kein Speichern: Die Daten bleiben nur bis zum Schliessen.', imported: 'Geladen: {n}', ignored: '{n} Datei(en) nicht erkannt', nothing_imported: 'Keine Datei erkannt. Wählen Sie die unten genannten Dateien.',
     notes: 'Notizen', note_new: 'Neue Notiz', note_ph: 'Was Sie am Computer erledigen wollen…', no_domain: 'Ohne Bereich', save: 'Speichern', to_handle: 'Zu erledigen', handled: 'Erledigt', no_notes: 'Keine offenen Notizen.', done: 'Erledigt', reopen: 'Wieder öffnen', del: 'Löschen', del_sure: 'Sicher?', purge_done: 'Erledigte Notizen löschen',
     notes_send: 'Notizen an den Computer senden', notes_send_txt: 'Offene Notizen kopieren und in eine E-Mail, OneNote oder Teams einfügen; oder als Datei in OneDrive speichern.', copy_all: 'Notizen kopieren', save_file: 'Als Datei speichern', copied: 'Kopiert.', copy_manual: 'Text markieren und kopieren.', save_declined: 'Speichern abgebrochen.', note_empty: 'Die Notiz ist leer.', note_saved: 'Notiz gespeichert.',
     data: 'Daten', update_title: 'Daten aktualisieren', update_txt: 'Tippen Sie auf die Schaltfläche und wählen Sie in OneDrive FSSPX › Ordner «Natel» die Datei {f}. Der Computer hält sie selbst aktuell. Sie bleibt verschlüsselt auf diesem Handy.', other_files: 'Man kann auch direkt die ursprünglichen Dateien wählen, eine oder mehrere.', stale: 'Die Daten sind {n} Tage alt. Hier tippen zum Aktualisieren.', choose_files: 'Dateien wählen', sources: 'Dateien', file_of: 'Datei vom', loaded_on: 'geladen am', up_to_date: 'aktuell', old_days: 'vor {n} Tagen', missing: 'noch nicht geladen',
@@ -820,7 +860,7 @@ const CORE_T = {
 
   /* ---------- démarrage ---------- */
   M.init({
-    bundle: 'MyWil-Natel.json', id: 'mywil', name: 'MyWil', langs: ['fr', 'de'], T, logo: window.LOGO,
+    bundle: 'MyWil-Natel.json', autoSync: 'wil-lien.bin', notesOnly: true, notesRepo: 'Fatibo-CH/fatibo-ch.github.io', id: 'mywil', name: 'MyWil', langs: ['fr', 'de'], T, logo: window.LOGO,
     sources: [{ key: 'wil', label: 'src_wil', where: 'src_wil_where' }, { key: 'lsa', label: 'src_lsa', where: 'src_lsa_where' }],
     detect, onLock() { lsa = null }, onImport() { lsa = null },
     freshness() { const i = srcInfo('wil'); return i ? esc(t('data_of', { d: fmtD((i.data.erstellt || i.fileDate || i.importedAt).slice(0, 10)) })) : esc(t('app_sub')) },
