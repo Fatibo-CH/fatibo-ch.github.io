@@ -637,7 +637,7 @@ const CORE_T = {
   }
   const live = c => (lsa?.[c] || []).filter(x => !x.deleted);
   const get = (c, id) => id ? live(c).find(x => x.id === id) : null;
-  const pName = p => p ? [p.lastName, p.firstName].filter(Boolean).join(' ') + (p.religiousName ? ` (${p.religiousName})` : '') : '–';
+  const pName = p => p ? [p.lastName, p.firstName].filter(Boolean).join(' ') + (p.birthName && p.birthName.trim().toLowerCase() !== String(p.lastName || '').trim().toLowerCase() ? ` (${L() === 'de' ? 'geb.' : p.sex === 'm' ? 'né' : 'née'} ${p.birthName.trim()})` : '') + (p.religiousName ? ` (${p.religiousName})` : '') : '–';
   const addr = h => h ? [h.street, h.extra, [h.zip, h.city].filter(Boolean).join(' ')].filter(Boolean).join(', ') : '';
   const mapUrl = h => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent([h.street, [h.zip, h.city].filter(Boolean).join(' '), 'Schweiz'].filter(Boolean).join(', '));
   const visits = f => live('visits').filter(f).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
