@@ -108,7 +108,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-l
 if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 <script>
 'use strict';
-/* ============ Noyau commun MyWil / MyTibo ============
+/* ============ Noyau commun des applications Natel ============
    Le code est en ligne ; les données viennent de fichiers choisis sur le Natel (OneDrive / SharePoint)
    et restent sur ce Natel, chiffrées avec le code de verrouillage. */
 const M = (() => {
@@ -146,7 +146,7 @@ const M = (() => {
   async function dec(o, k) { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(o.iv) }, k, unb64(o.ct)); return JSON.parse(new TextDecoder().decode(pt)) }
 
   /* ---------- stockage local (IndexedDB) ---------- */
-  let dbp = null;
+  let dbp = null, docsMem = null;
   function idb() { if (!dbp) dbp = new Promise((res, rej) => { try { const r = indexedDB.open('natel-' + cfg.id, 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) } catch (e) { rej(e) } }); return dbp }
   async function kvGet(k) { const d = await idb(); return new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error) }) }
   async function kvSet(k, v) { const d = await idb(); return new Promise((res, rej) => { const tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error) }) }
@@ -193,8 +193,8 @@ const M = (() => {
   async function bioOpen() { const o = await kvGet('vault'); const w = o.wraps?.bio; const secret = await bioGet(w.credId, w.prfSalt); await openWithRaw(o, await unwrapWith(await prfKey(secret), w)) }
   async function bioDisable() { const o = await kvGet('vault'); delete o.wraps.bio; await kvSet('vault', o) }
   async function hasBio() { try { const o = await kvGet('vault'); return !!o?.wraps?.bio } catch (e) { return false } }
-  function lock() { key = null; st = null; dekRaw = null; cfg.onLock && cfg.onLock(); stack = []; renderLock() }
-  async function wipe() { try { await kvDel('vault') } catch (e) { } key = null; st = null; dekRaw = null; cfg.onLock && cfg.onLock(); renderLock() }
+  function lock() { key = null; st = null; dekRaw = null; docsMem = null; cfg.onLock && cfg.onLock(); stack = []; renderLock() }
+  async function wipe() { try { await kvDel('vault'); await kvDel('docs') } catch (e) { } key = null; st = null; dekRaw = null; docsMem = null; cfg.onLock && cfg.onLock(); renderLock() }
 
   async function renderLock(errMsg) {
     const exists = memOnly ? false : await hasVault();
@@ -241,7 +241,9 @@ const M = (() => {
       try {
         const text = await f.text(); let o; try { o = JSON.parse(text) } catch (e) { bad.push(f.name); continue }
         if (o && o.app === 'natel-paquet' && Array.isArray(o.files)) { /* paquet préparé par l'ordinateur : plusieurs fichiers en un */
-          for (const x of o.files) { try { one(typeof x.text === 'string' ? JSON.parse(x.text.replace(/^\uFEFF/, '')) : x.content, x.name, x.date) || bad.push(x.name) } catch (e) { bad.push(x.name) } }
+          const pdfs = o.files.filter(x => x.kind === 'pdf' && x.b64);
+          if (pdfs.length) { docsMem = pdfs.map(x => ({ name: x.name, date: x.date, grp: x.grp || '', draft: !!x.draft, b64: x.b64 })); st.docsInfo = { n: pdfs.length, date: o.made || new Date().toISOString() }; if (!memOnly) { try { await kvSet('docs', await enc({ list: docsMem }, key)) } catch (e) { } } if (!ok.includes(t('src_plans'))) ok.push(t('src_plans')) }
+          for (const x of o.files.filter(x => x.kind !== 'pdf')) { try { one(typeof x.text === 'string' ? JSON.parse(x.text.replace(/^\uFEFF/, '')) : x.content, x.name, x.date) || bad.push(x.name) } catch (e) { bad.push(x.name) } }
           continue;
         }
         if (!one(o, f.name, f.lastModified ? new Date(f.lastModified).toISOString() : '')) bad.push(f.name);
@@ -287,6 +289,7 @@ const M = (() => {
     if (focus) { const el = document.getElementById(focus); if (el && el.matches('input,textarea')) { el.focus(); try { el.setSelectionRange(sel, sel) } catch (e) { } } }
     bindLang();
     if (view.n === 'donnees') fillBioBar();
+    try { cfg.after && cfg.after(view.n, view.a) } catch (e) { }
   }
 
   /* ---------- événements (délégation) ---------- */
@@ -370,6 +373,23 @@ const M = (() => {
       ${D.groups.map(g => `<section class="sec"><h3>${esc(lb(g))}</h3><div class="list">${(g.links || []).map(l => `<a class="row" href="${esc(l.url)}" target="_blank" rel="noopener"><div class="m"><b>${esc(lb(l))}</b>${l.sub ? `<small>${esc(l.sub)}</small>` : ''}</div><div class="s">${ICON.folder}</div></a>`).join('')}</div></section>`).join('')}`;
   }
 
+  /* ---------- documents PDF (plans) ---------- */
+  async function getDocs() { if (docsMem) return docsMem; try { const o = await kvGet('docs'); if (o) docsMem = (await dec(o, key)).list } catch (e) { } return docsMem || [] }
+  let pdfLib = null;
+  function loadPdfLib() { if (pdfLib) return pdfLib; pdfLib = new Promise((res, rej) => { if (window.pdfjsLib) return res(window.pdfjsLib); const sc = document.createElement('script'); sc.src = 'pdf.min.js'; sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js'; res(window.pdfjsLib) }; sc.onerror = () => { pdfLib = null; rej(new Error('pdfjs')) }; document.head.appendChild(sc) }); return pdfLib }
+  async function renderPdf(b64, el) {
+    el.innerHTML = `<p class="muted small">${t('working')}</p>`;
+    try {
+      const lib = await loadPdfLib(); const doc = await lib.getDocument({ data: unb64(b64) }).promise; el.innerHTML = '';
+      const w = Math.max(320, el.clientWidth || 360), dpr = Math.min(3, (window.devicePixelRatio || 1) * 1.6);
+      for (let i = 1; i <= doc.numPages; i++) {
+        const pg = await doc.getPage(i); const v0 = pg.getViewport({ scale: 1 }); const vp = pg.getViewport({ scale: (w * dpr) / v0.width });
+        const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height); c.style.cssText = 'width:100%;height:auto;display:block;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.15)';
+        el.appendChild(c); await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      }
+    } catch (e) { el.innerHTML = `<p class="note warn">${t('pdf_fail')}</p>` }
+  }
+
   /* ---------- démarrage ---------- */
   function start() {
     cfg.onUnlock && cfg.onUnlock();
@@ -387,7 +407,7 @@ const M = (() => {
     renderLock();
     try { if (window.claude?.use) { claude.use('downloads').then(d => { dl = d; if (key && view.n === 'notes') render() }).catch(() => { }) } } catch (e) { }
   }
-  return { init, esc, t, lang, today, iso, parse, addDays, diffDays, fmtD, fmtLong, wd, mon, chf, norm, src, srcInfo, ui, go, render, toast, save, derive, unb64, b64, get st() { return st }, get view() { return view } };
+  return { init, getDocs, renderPdf, esc, t, lang, today, iso, parse, addDays, diffDays, fmtD, fmtLong, wd, mon, chf, norm, src, srcInfo, ui, go, render, toast, save, derive, unb64, b64, get st() { return st }, get view() { return view } };
 })();
 
 const ICON = {
@@ -425,6 +445,7 @@ const CORE_T = {
     security: 'Sécurité', security_txt: 'L’application se verrouille seule après 10 minutes en arrière-plan. Les données ne quittent pas ce Natel.', mem_only: 'Ce navigateur n’autorise pas l’enregistrement : il faudra recharger les fichiers à chaque ouverture.', view_err: 'Cette page n’a pas pu s’afficher.',
     bio_open: 'Ouvrir avec l’empreinte', bio_fail: 'L’empreinte n’a pas fonctionné. Entrez le code.', bio_unavail: 'L’empreinte n’est possible que dans l’application installée sur le Natel.', bio_on: 'Empreinte activée', bio_off: 'Désactiver', bio_enable: 'Activer l’empreinte digitale', bio_done: 'Empreinte activée. La prochaine fois, ouvrez avec le doigt.', bio_noprf: 'Ce téléphone ne permet pas encore l’ouverture par empreinte ici. Le code reste nécessaire.', share: 'Envoyer…',
     dossiers: 'Dossiers', dossiers_txt: 'Un toucher ouvre le dossier dans SharePoint ou OneDrive, avec votre compte. Rien n’est copié sur le Natel.', no_dossiers: 'La liste des dossiers n’est pas encore chargée.', no_dossiers_txt: 'Chargez « Dossiers_Natel.json » dans Données.', src_dossiers: 'Liste des dossiers', src_dossiers_where: 'Dossiers_Natel.json (à côté de vos autres données)',
+    src_plans: 'Plans (PDF)', pdf_fail: 'Ce document n’a pas pu s’afficher.',
     search: 'Rechercher…', nores: 'Aucun résultat.', all: 'Tout', open_in_maps: 'Itinéraire', copy: 'Copier', note_for: 'Note', today: 'Aujourd’hui', tomorrow: 'Demain', more: 'Plus', home: 'Accueil', see_all: 'Tout voir', no_data_yet: 'Pas encore de données.', load_now: 'Charger les fichiers'
   },
   de: {
@@ -438,6 +459,7 @@ const CORE_T = {
     security: 'Sicherheit', security_txt: 'Die App sperrt sich nach 10 Minuten im Hintergrund von selbst. Die Daten verlassen dieses Handy nicht.', mem_only: 'Dieser Browser erlaubt kein Speichern: Die Dateien müssen bei jedem Öffnen neu geladen werden.', view_err: 'Diese Seite konnte nicht angezeigt werden.',
     bio_open: 'Mit Fingerabdruck öffnen', bio_fail: 'Der Fingerabdruck hat nicht funktioniert. Code eingeben.', bio_unavail: 'Fingerabdruck geht nur in der auf dem Handy installierten App.', bio_on: 'Fingerabdruck aktiv', bio_off: 'Ausschalten', bio_enable: 'Fingerabdruck einschalten', bio_done: 'Fingerabdruck eingeschaltet. Nächstes Mal mit dem Finger öffnen.', bio_noprf: 'Dieses Handy erlaubt hier noch kein Öffnen per Fingerabdruck. Der Code bleibt nötig.', share: 'Senden…',
     dossiers: 'Ordner', dossiers_txt: 'Ein Tippen öffnet den Ordner in SharePoint oder OneDrive, mit Ihrem Konto. Nichts wird auf das Handy kopiert.', no_dossiers: 'Die Ordnerliste ist noch nicht geladen.', no_dossiers_txt: '«Dossiers_Natel.json» unter Daten laden.', src_dossiers: 'Ordnerliste', src_dossiers_where: 'Dossiers_Natel.json (neben Ihren anderen Daten)',
+    src_plans: 'Pläne (PDF)', pdf_fail: 'Dieses Dokument konnte nicht angezeigt werden.',
     search: 'Suchen…', nores: 'Keine Treffer.', all: 'Alle', open_in_maps: 'Route', copy: 'Kopieren', note_for: 'Notiz', today: 'Heute', tomorrow: 'Morgen', more: 'Mehr', home: 'Start', see_all: 'Alle anzeigen', no_data_yet: 'Noch keine Daten.', load_now: 'Dateien laden'
   }
 };
@@ -454,13 +476,22 @@ const CORE_T = {
       month_now: 'Frais de {m}', lines: '{n} ligne(s)', expenses: 'Dépenses', km: 'Kilomètres', km_cost: 'Frais km', dons: 'Dons', total: 'Total', in_progress: 'En cours', finished: 'Terminé', since: 'depuis le {d}',
       phone: 'Téléphone', email: 'Courriel', address: 'Adresse', org: 'Organisation', fonction: 'Fonction', remark: 'Remarque', category: 'Catégorie', find_contact: 'Chercher un contact…',
       src_carnet: 'Carnet d’adresses', src_carnet_where: 'OneDrive › Carnet Adresse › carnet.json', src_frais: 'Fiche de frais', src_frais_where: 'OneDrive › Comptabilité › 2026 › frais_2026.json', src_projets: 'Projets en cours', src_projets_where: 'PTF - Documents › MyTibo › Donnees › projets.json',
-      nd_contacts: 'Contacts', nd_frais: 'Frais', nd_projets: 'Projets', nd_apostolat: 'Apostolat', nd_perso: 'Personnel', no_entries: 'Aucune entrée.', go_wil: 'MyWil', go_wil_txt: 'Sancta Maria Wil', year: 'Année {y}', rate: 'taux {r} CHF/km'
+      nd_contacts: 'Contacts', nd_frais: 'Frais', nd_projets: 'Projets', nd_apostolat: 'Apostolat', nd_perso: 'Personnel', no_entries: 'Aucune entrée.', src_lf: 'Mgr Lefebvre – photos', src_lf_where: 'Mgr Lefebvre › _MyTibo (catalogue)', src_lf_docs: 'Mgr Lefebvre – documents', src_wm: 'Webmaster – état du travail', src_wm_where: 'Webmaster CH - Documents (préparé par l’ordinateur)',
+      lefebvre: 'Mgr Lefebvre', lf_photos: 'Photos', lf_docs: 'Documents', lf_voy: 'Voyages', lf_year_n: '{n} étape(s)', lf_also: 'Cette année-là', lf_src_web: 'source en ligne', lf_prev: 'Année précédente', lf_next: 'Année suivante', lf_all_years: 'Toutes les années', lf_no_year: 'Sans date', lf_none: 'Le catalogue Mgr Lefebvre n’est pas encore sur ce Natel. Chargez MyTibo-Natel.json dans Données.', lf_open: 'Ouvrir', pages: '{n} p.', lf_count: '{p} photos · {d} documents',
+      webmaster: 'Webmaster', wm_none: 'L’état du travail de webmaster n’est pas encore sur ce Natel. Chargez MyTibo-Natel.json dans Données.', wm_02: 'En cours', wm_01: 'Déposés – à regarder', wm_05: 'En attente', wm_04: 'Publiés (45 derniers jours)', wm_files: '{n} fichier(s)', wm_bulletins: 'Bulletins des prieurés – {m}', wm_missing: 'manquant', wm_notyet: 'pas encore reçu', wm_received: 'reçu – à mettre en ligne', wm_done: 'traité', wm_vorwort: 'Dernier jour du mois : préparer aujourd’hui l’avant-propos (Vorwort) du supérieur.', wm_pfr: 'Article du supérieur : prioritaire', days_ago: 'il y a {n} j', today_s: 'aujourd’hui', wm_summary: '{c} en cours · {d} déposé(s) · {b} bulletin(s) à traiter',
+      go_wil: 'MyWil', go_wil_txt: 'Sancta Maria Wil', year: 'Année {y}', rate: 'taux {r} CHF/km'
     })
   };
   function detect(o, name) {
+    if (o && Array.isArray(o.entrees) && o.sources) return { key: 'lf_carnet', label: 'src_lf', data: o };
     if (o && Array.isArray(o.contacts)) return { key: 'carnet', label: 'src_carnet', data: o };
     if (o && Array.isArray(o.mois) && o.annee) return { key: 'frais', label: 'src_frais', data: o };
     if (Array.isArray(o) && o.every(x => x && typeof x === 'object' && 't' in x)) return { key: 'projets', label: 'src_projets', data: o };
+    if (o && o.app === 'natel-webmaster') return { key: 'webmaster', label: 'src_wm', data: o };
+    if (o && o.f && typeof o.f === 'object' && 'v' in o) return { key: 'lf_photos', label: 'src_lf', data: o };
+    if (o && Array.isArray(o.docs) && Array.isArray(o.parts)) return { key: 'lf_docs', label: 'src_lf_docs', data: o };
+    if (o && Array.isArray(o.groupes)) return { key: 'lf_liens', label: 'src_lf', data: o };
+    if (o && typeof o === 'object' && !Array.isArray(o)) { const v = Object.values(o)[0]; if (v && typeof v === 'object' && ('evenement' in v || 'remarques' in v)) return { key: 'lf_fiches', label: 'src_lf', data: o }; if (v && typeof v === 'object' && ('resume' in v || 'genre' in v)) return { key: 'lf_ftextes', label: 'src_lf_docs', data: o } }
     return null;
   }
   const contacts = () => (src('carnet')?.contacts || []);
@@ -481,7 +512,9 @@ const CORE_T = {
         ${s ? `<div class="list"><div class="row"><div class="m"><b class="num">CHF ${chf(s.dep + s.kmc)}</b><small>${t('lines', { n: s.n })} · ${t('expenses')} ${chf(s.dep)} · ${s.km} km${s.don ? ' · ' + t('dons') + ' ' + chf(s.don) : ''}</small></div></div></div>` : `<div class="note">${t('no_frais')}</div>`}</section>
       <section class="sec"><div class="sec-h"><h3>${t('projets')}</h3><button class="linkbtn" data-a="go" data-v="projets">${t('see_all')}</button></div>
         <div class="list">${P.length ? P.slice(0, 5).map(p => `<div class="row"><div class="m"><b>${esc(p.t)}</b>${p.d ? `<small>${esc(p.d)}</small>` : ''}</div></div>`).join('') : `<div class="empty">${t('no_entries') || '—'}</div>`}</div></section>
-      <section class="list"><button class="row" data-a="tab" data-v="notes"><div class="m"><b>${t('notes')}</b></div><div class="s"><span class="chip">${M.st.notes.filter(n => !n.done).length}</span></div></button>
+      <section class="list">${src('webmaster') ? (() => { const w = wmStats(src('webmaster')); return `<button class="row" data-a="go" data-v="webmaster"><div class="m"><b>${t('webmaster')}</b><small>${t('wm_summary', w)}</small></div></button>` })() : ''}
+        <button class="row" data-a="go" data-v="lefebvre"><div class="m"><b>${t('lefebvre')}</b><small>${t('lf_voy')} · ${t('lf_photos')} · ${t('lf_docs')}</small></div></button>
+        <button class="row" data-a="tab" data-v="notes"><div class="m"><b>${t('notes')}</b></div><div class="s"><span class="chip">${M.st.notes.filter(n => !n.done).length}</span></div></button>
         ${window.WIL_URL ? `<a class="row" href="${window.WIL_URL}" target="_blank" rel="noopener"><div class="m"><b>${t('go_wil')}</b><small>${t('go_wil_txt')}</small></div></a>` : ''}</section>`;
   }
 
@@ -528,21 +561,132 @@ const CORE_T = {
     return `<h1>${t('projets')}</h1><div class="list">${P.map(p => `<div class="row"><div class="m"><b>${esc(p.t)}</b>${p.d ? `<small class="txt">${esc(p.d)}</small>` : ''}${p.depuis ? `<small>${t('since', { d: fmtD(p.depuis) })}</small>` : ''}</div><div class="s"><span class="chip ${p.fait ? 'ok' : ''}">${p.fait ? t('finished') : t('in_progress')}</span>${noteBtn(p.t, 'projets')}</div></div>`).join('') || `<div class="empty">—</div>`}</div>`;
   }
 
+  /* ---------- liens vers SharePoint / OneDrive ---------- */
+  const LIB = { 'PTF - Documents': ['PTF', 'Shared Documents'], 'WIL - Wil': ['Wil', 'Wil'], 'Webmaster CH - Documents': ['WebmasterCH', 'Shared Documents'], 'PHOTOS - Photos': ['CH-Photos', 'Photos'] };
+  function spUrl(p, dir) {
+    const a = p.split('/');
+    if (a[0] === 'FSSPX' && LIB[a[1]]) { const [site, lib] = LIB[a[1]]; const rest = [lib, ...a.slice(2)];
+      if (dir) return `https://fsspx.sharepoint.com/sites/${site}/${encodeURIComponent(lib)}/Forms/AllItems.aspx?id=${encodeURIComponent('/sites/' + site + '/' + rest.join('/'))}`;
+      return `https://fsspx.sharepoint.com/sites/${site}/` + rest.map(encodeURIComponent).join('/') }
+    if (a[0] === 'OneDrive') return 'https://onedrive.live.com/?qt=search&q=' + encodeURIComponent(a[a.length - 1]);
+    return null;
+  }
+  const ago = iso => { if (!iso) return ''; const n = M.diffDays(iso.slice(0, 10), today()); return n <= 0 ? t('today_s') : t('days_ago', { n }) };
+
+  /* ---------- Mgr Lefebvre ---------- */
+  let LF = null;
+  const yr = s => { const A = [...String(s || '').matchAll(/(?:^|[^0-9])(1[89][0-9][0-9]|20[0-2][0-9])(?![0-9])/g)].map(m => +m[1]); return A.find(y => y >= 1905 && y <= 1991) || A[0] || null };
+  function lfBuild() {
+    if (LF) return LF;
+    const meta = src('lf_photos')?.f || {}, fi = src('lf_fiches') || {}, ft = src('lf_ftextes') || {}, li = src('lf_liens')?.groupes || [], docs = src('lf_docs')?.docs || [];
+    const hide = new Set(); li.forEach(g => (g || []).slice(1).forEach(p => hide.add(p)));
+    const photos = [], seen = new Set();
+    const add = (p, m) => {
+      if (seen.has(p) || hide.has(p) || !/\.(jpe?g|png|tiff?|gif|webp|heic)$/i.test(p)) return; seen.add(p);
+      m = m || {}; const f = fi[p] || {}, kw = (m.kw || []).filter(k => k !== 'Annee').join(', ');
+      const title = m.ti || f.evenement || p.split('/').pop().replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ');
+      const y = yr(f.date) || yr(m.ti) || yr(kw) || yr(p);
+      photos.push({ p, title, y, lieu: f.lieu || '', date: f.date || '', kw, rem: f.remarques || '', q: norm([title, f.lieu, f.date, f.evenement, kw, p].join(' ')) });
+    };
+    for (const [p, v] of Object.entries(meta)) add(p, v && v[2]);
+    for (const p of Object.keys(fi)) add(p, null);
+    photos.sort((a, b) => (a.y || 9999) - (b.y || 9999) || a.p.localeCompare(b.p));
+    const D = docs.map(d => { const f = ft[d.p] || {}; return Object.assign({}, d, { f, y: d.a || yr(f.date), q: norm([d.t, f.resume, f.genre, f.lieu, f.occasion, f.auteur, d.p].join(' ')) }) }).sort((a, b) => (a.y || 9999) - (b.y || 9999) || (a.t || '').localeCompare(b.t || ''));
+    return (LF = { photos, docs: D });
+  }
+  const MOISN = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  const DRAPN = { 'Suisse': 'CH', 'France': 'FR', 'Italie': 'IT', 'Vatican': 'VA', 'Sénégal': 'SN', 'États-Unis': 'US', 'Etats-Unis': 'US', 'Allemagne': 'DE', 'Autriche': 'AT', 'Belgique': 'BE', 'Pays-Bas': 'NL', 'Espagne': 'ES', 'Portugal': 'PT', 'Irlande': 'IE', 'Angleterre': 'GB', 'Royaume-Uni': 'GB', 'Grande-Bretagne': 'GB', 'Écosse': 'GB', 'Gabon': 'GA', 'Cameroun': 'CM', 'Madagascar': 'MG', 'Sierra Leone': 'SL', 'Kenya': 'KE', 'Afrique du Sud': 'ZA', 'Nigeria': 'NG', 'Togo': 'TG', "Côte d'Ivoire": 'CI', 'Mali': 'ML', 'Guinée': 'GN', 'Congo': 'CG', 'Argentine': 'AR', 'Brésil': 'BR', 'Chili': 'CL', 'Colombie': 'CO', 'Mexique': 'MX', 'Pérou': 'PE', 'Équateur': 'EC', 'Canada': 'CA', 'Australie': 'AU', 'Nouvelle-Zélande': 'NZ', 'Inde': 'IN', 'Philippines': 'PH', 'Japon': 'JP', 'Gabon ': 'GA', 'Haute-Volta': 'BF', 'Burkina Faso': 'BF', 'Tchad': 'TD', 'Mauritanie': 'MR', 'Guinée-Bissau': 'GW', 'Cap-Vert': 'CV', 'Gambie': 'GM', 'Liechtenstein': 'LI', 'Luxembourg': 'LU', 'Pologne': 'PL', 'Hongrie': 'HU', 'Uruguay': 'UY', 'Paraguay': 'PY', 'Venezuela': 'VE', 'Bolivie': 'BO', 'Zimbabwe': 'ZW', 'Rhodésie': 'ZW', 'Djibouti': 'DJ', 'Maroc': 'MA', 'Tunisie': 'TN', 'Algérie': 'DZ', 'Égypte': 'EG', 'Israël': 'IL', 'Liban': 'LB', 'Terre sainte': 'IL', 'Suède': 'SE', 'Danemark': 'DK', 'Norvège': 'NO', 'Malte': 'MT', 'Monaco': 'MC', 'Réunion': 'RE', 'Maurice': 'MU', 'Seychelles': 'SC' };
+  const drap = p => { const c = DRAPN[p]; return c ? String.fromCodePoint(...[...c].map(x => 0x1F1E6 + x.charCodeAt(0) - 65)) : '' };
+  const dC = d => { const p = String(d || '').split('-'); if (!p[0]) return ''; if (p[2]) return +p[2] + ' ' + MOISN[+p[1] - 1]; if (p[1]) return MOISN[+p[1] - 1]; return '' };
+  function lfCarnet() {
+    const C = src('lf_carnet'); if (!C) return null;
+    const S = C.sources || {};
+    return (C.entrees || []).map(e => { const y = +String(e.debut || '').slice(0, 4) || null, y2 = +String(e.fin || '').slice(0, 4) || y;
+      return Object.assign({}, e, { y, y2, q: norm([e.titre, e.resume, (e.lieux || []).join(' '), e.pays, e.type].join(' ')), srcT: e.src === 'web' ? t('lf_src_web') : ((S[e.src] && S[e.src].titre || '').split(',')[0].replace(/^Bernard /, '') + (e.page ? ', p. ' + e.page : '')) }) })
+      .filter(e => e.y).sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
+  }
+  if (!document.getElementById('lf-css')) { const st = document.createElement('style'); st.id = 'lf-css'; st.textContent = `
+    .lfy{display:flex;align-items:center;gap:8px;margin:10px 0 4px}.lfy select{flex:1;margin:0}.lfy button{flex:none;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:700 20px var(--body);cursor:pointer}.lfy button:disabled{opacity:.35}
+    .lfh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:16px 2px 6px}.lfh h3{margin:0;font:700 22px var(--head,Spectral,serif);color:var(--accent)}.lfh span{font-size:13px;color:var(--muted)}.lfh .fl{font-size:17px;letter-spacing:2px}
+    .lfv{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:start}.lfv .d{font:700 13px var(--body);color:var(--accent);padding-top:2px;line-height:1.25}.lfv .d small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+    .lfv b{display:block}.lfv .w{font-size:13px;color:var(--muted);margin-top:1px}.lfv .r{font-size:14px;line-height:1.45;margin-top:4px}.lfv .s{font-size:12px;color:var(--muted);margin-top:4px}.lfv .s a{color:var(--accent)}
+    .lfalso{font-size:13px;color:var(--muted);margin:2px 2px 8px}.lfalso b{color:var(--ink)}` ; document.head.appendChild(st) }
+  function vLefebvre() {
+    const CV = lfCarnet();
+    if (!src('lf_photos') && !src('lf_docs') && !CV) return `<h1>${t('lefebvre')}</h1><div class="card"><b>${t('lf_none')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const L = lfBuild(), tab = ui.lt || (CV ? 'voyages' : 'photos'), q = norm(ui.lq || ''), lim = +(ui.lLim || 150);
+    const list = tab === 'voyages' ? (CV || []) : tab === 'photos' ? L.photos : L.docs;
+    const years = [...new Set(list.map(x => x.y ? String(x.y) : '?'))].sort();
+    let yr = ui.ly == null ? (tab === 'voyages' && years.length ? years.find(y => y !== '?') || '' : '') : ui.ly; if (yr && !years.includes(yr)) yr = '';
+    const R = list.filter(x => (!q || x.q.includes(q)) && (!yr || (yr === '?' ? !x.y : String(x.y) === yr)));
+    const i = years.indexOf(yr), prev = yr ? years[i - 1] : null, next = yr ? years[i + 1] : years[0];
+    const sel = `<div class="lfy"><button data-a="ui" data-k="ly" data-val="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="${t('lf_prev')}">‹</button><select data-ui="ly"><option value="">${t('lf_all_years')}</option>${years.map(y => `<option value="${y}" ${y === yr ? 'selected' : ''}>${y === '?' ? t('lf_no_year') : y}</option>`).join('')}</select><button data-a="ui" data-k="ly" data-val="${next || ''}" ${next ? '' : 'disabled'} aria-label="${t('lf_next')}">›</button></div>`;
+    let out = '', cur = null;
+    if (tab === 'voyages') {
+      const G = {}; for (const e of R.slice(0, yr ? 9999 : lim)) (G[e.y] = G[e.y] || []).push(e);
+      for (const y of Object.keys(G).sort()) {
+        const E = G[y], pays = [...new Set(E.map(e => e.pays).filter(Boolean))];
+        const span = (CV || []).filter(e => e.y < +y && e.y2 >= +y);
+        out += `<div class="lfh"><h3>${esc(y)}</h3><span>${t('lf_year_n', { n: E.length })}</span><span class="fl" title="${esc(pays.join(', '))}">${pays.map(drap).join('')}</span></div>`;
+        if (span.length) out += `<p class="lfalso"><b>${t('lf_also')} :</b> ${esc(span.map(e => e.titre + ' (' + e.y + '–' + e.y2 + ')').join(' · '))}</p>`;
+        out += `<div class="list">${E.map(e => { const d1 = dC(e.debut), d2 = e.fin && e.fin !== e.debut ? (String(e.fin).slice(0, 4) === String(e.debut).slice(0, 4) ? dC(e.fin) : String(e.fin).slice(0, 4)) : '';
+          return `<div class="row"><div class="lfv"><div class="d">${esc(d1 || e.y)}${d2 ? `<small>→ ${esc(d2)}</small>` : ''}</div><div><b>${esc(e.titre)}</b><div class="w">${drap(e.pays)} ${esc([(e.lieux || []).join(', '), e.pays].filter(Boolean).join(' · '))}${e.type ? ` · <span class="chip">${esc(e.type)}</span>` : ''}</div>${e.resume ? `<div class="r">${esc(e.resume)}</div>` : ''}<div class="s">${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.srcT)} ↗</a>` : esc(e.srcT)}</div></div></div></div>` }).join('')}</div>`;
+      }
+    } else {
+      for (const x of R.slice(0, lim)) {
+        const yh = x.y || t('lf_no_year'); if (yh !== cur) { if (cur !== null) out += '</div></section>'; cur = yh; out += `<section class="sec"><h3>${esc(yh)}</h3><div class="list">` }
+        const url = spUrl(x.p, false);
+        if (tab === 'photos') out += `<a class="row" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : ''}><div class="m"><b>${esc(x.title)}</b><small>${esc([x.date || x.y, x.lieu].filter(Boolean).join(' · '))}</small>${x.kw ? `<small>${esc(x.kw)}</small>` : ''}${x.rem ? `<small>${esc(x.rem)}</small>` : ''}</div><div class="s">${ICON.link}</div></a>`;
+        else out += `<a class="row" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : ''}><div class="m"><b>${esc(x.t)}</b><small>${esc([x.f.genre, x.f.lieu, x.f.occasion, x.n ? t('pages', { n: x.n }) : '', (x.k || '').toUpperCase()].filter(Boolean).join(' · '))}</small>${x.f.resume ? `<small class="txt">${esc(x.f.resume.slice(0, 260))}${x.f.resume.length > 260 ? '…' : ''}</small>` : ''}</div><div class="s">${ICON.link}</div></a>`;
+      }
+      if (cur !== null) out += '</div></section>';
+    }
+    const T3 = [CV ? 'voyages' : null, 'photos', 'docs'].filter(Boolean);
+    return `<h1>${t('lefebvre')}</h1><p class="small muted" style="margin:0">${CV ? CV.length + ' étapes · ' : ''}${t('lf_count', { p: L.photos.length, d: L.docs.length })}</p>
+      <div class="tabs">${T3.map(k => `<button data-a="ui" data-k="lt" data-val="${k}" aria-pressed="${tab === k}">${t(k === 'voyages' ? 'lf_voy' : k === 'photos' ? 'lf_photos' : 'lf_docs')}</button>`).join('')}</div>
+      <input id="lq" type="search" placeholder="${esc(t('search'))}" value="${esc(ui.lq || '')}" data-live="lq">
+      ${sel}
+      ${out || `<p class="empty">${t('nores')}</p>`}${R.length > lim && !(tab === 'voyages' && yr) ? `<button class="btn" data-a="ui" data-k="lLim" data-val="${lim + 300}">Afficher plus (${R.length - lim})</button>` : ''}`;
+  }
+
+  /* ---------- Webmaster ---------- */
+  function wmBulletins(W, mo) {
+    const P = W.bulletins?.prieures || [];
+    return P.map(pr => { const mot = (pr.motifs || [pr.nom]).map(norm); const F = (mo.files || []).filter(f => mot.some(m => norm(f.name).includes(m)));
+      const st = !F.length ? 'missing' : F.every(f => f.done) ? 'done' : 'received'; return { pr, F, st } });
+  }
+  function wmStats(W) {
+    const E = k => (W.etapes || []).find(e => e.key === k)?.items || [];
+    const mo = (W.mois || [])[0]; const b = mo ? wmBulletins(W, mo).filter(x => x.st === 'received').length : 0;
+    return { c: E('02_En cours').length, d: E('01_Déposé').length, b };
+  }
+  function vWebmaster() {
+    const W = src('webmaster'); if (!W) return `<h1>${t('webmaster')}</h1><div class="card"><b>${t('wm_none')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const d0 = today(), last = M.addDays(d0, 1).slice(8, 10) === '01';
+    const sec = k => { const e = (W.etapes || []).find(x => x.key === k); const I = (e?.items || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      return `<section class="sec"><h3>${t('wm_' + k.slice(0, 2))} · ${I.length}</h3><div class="list">${I.length ? I.map(x => { const url = spUrl('FSSPX/Webmaster CH - Documents/' + x.rel, x.dir); const pfr = /Artikel PFR/.test(x.rel);
+        return `<a class="row" href="${esc(url)}" target="_blank" rel="noopener"><div class="m"><b>${esc(x.name)}</b><small>${esc([x.grp, x.dir ? t('wm_files', { n: x.n }) : ''].filter(Boolean).join(' · '))}</small>${pfr ? `<small><span class="chip amber">${t('wm_pfr')}</span></small>` : ''}</div><div class="s"><span class="chip">${esc(ago(x.date))}</span></div></a>` }).join('') : `<div class="empty">${t('no_entries')}</div>`}</div></section>` };
+    const bul = (W.mois || []).map((mo, mi) => { const R = wmBulletins(W, mo); const lab = mo.m.replace('_', '-');
+      return `<section class="sec"><h3>${esc(t('wm_bulletins', { m: fmtD(lab + '-01', { month: 'long', year: 'numeric' }) }))}</h3><div class="list">${R.map(r => `<div class="row"><div class="m"><b>${esc(r.pr.nom)}</b>${r.F.length ? `<small>${esc(r.F.map(f => f.name).join(' · '))}</small>` : ''}${r.pr.note ? `<small>${esc(r.pr.note)}</small>` : ''}</div><div class="s"><span class="chip ${r.st === 'done' ? 'ok' : r.st === 'received' ? 'amber' : mi ? '' : 'red'}">${r.st === 'missing' && mi ? t('wm_notyet') : t('wm_' + r.st)}</span></div></div>`).join('')}</div></section>` }).join('');
+    return `<h1>${t('webmaster')}</h1>${last ? `<p class="note warn">${t('wm_vorwort')}</p>` : ''}${sec('02_En cours')}${sec('01_Déposé')}${bul}${sec('05_En attente')}${sec('04_Publiés')}`;
+  }
+
   function vMore() {
     const tile = (v, icon, label) => `<button class="tile" data-a="go" data-v="${v}">${ICON[icon]}<b>${t(label)}</b></button>`;
-    return `<h1>${t('more')}</h1><div class="grid">${tile('projets', 'flag', 'projets')}${tile('dossiers', 'folder', 'dossiers')}${tile('donnees', 'data', 'data')}
+    return `<h1>${t('more')}</h1><div class="grid">${tile('lefebvre', 'book', 'lefebvre')}${tile('webmaster', 'link', 'webmaster')}${tile('projets', 'flag', 'projets')}${tile('dossiers', 'folder', 'dossiers')}${tile('donnees', 'data', 'data')}
       ${window.WIL_URL ? `<a class="tile" href="${window.WIL_URL}" target="_blank" rel="noopener">${ICON.link}<b>${t('go_wil')}</b><small>${t('go_wil_txt')}</small></a>` : ''}</div>`;
   }
 
   M.init({
     bundle: 'MyTibo-Natel.json', id: 'mytibo', name: 'My Tibo', langs: ['fr'], T, logo: window.LOGO,
-    sources: [{ key: 'carnet', label: 'src_carnet', where: 'src_carnet_where' }, { key: 'frais', label: 'src_frais', where: 'src_frais_where' }, { key: 'projets', label: 'src_projets', where: 'src_projets_where' }],
+    sources: [{ key: 'carnet', label: 'src_carnet', where: 'src_carnet_where' }, { key: 'frais', label: 'src_frais', where: 'src_frais_where' }, { key: 'projets', label: 'src_projets', where: 'src_projets_where' }, { key: 'lf_photos', label: 'src_lf', where: 'src_lf_where' }, { key: 'webmaster', label: 'src_wm', where: 'src_wm_where' }],
+    onImport() { LF = null }, onLock() { LF = null },
     detect,
     freshness() { const i = srcInfo('carnet') || srcInfo('frais'); return i ? 'Données du ' + esc(fmtD((i.fileDate || i.importedAt).slice(0, 10))) : 'Pater Thibaud Favre' },
     tabs: [{ v: 'home', icon: 'home', label: 'home' }, { v: 'contacts', icon: 'phone', label: 'contacts' }, { v: 'frais', icon: 'cash', label: 'frais' }, { v: 'notes', icon: 'note', label: 'notes' }, { v: 'more', icon: 'more', label: 'more' }],
     tabOf: { contact: 'contacts' },
     noteDomains: { contacts: 'nd_contacts', frais: 'nd_frais', projets: 'nd_projets', apostolat: 'nd_apostolat', perso: 'nd_perso' },
-    views: { home: vHome, contacts: vContacts, contact: vContact, frais: vFrais, projets: vProjets, more: vMore },
+    views: { lefebvre: vLefebvre, webmaster: vWebmaster, home: vHome, contacts: vContacts, contact: vContact, frais: vFrais, projets: vProjets, more: vMore },
     actions: { qsearch() { ui.cq = document.getElementById('hq').value; M.go('contacts') } }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'hq') { e.preventDefault(); ui.cq = e.target.value; M.go('contacts') } });
