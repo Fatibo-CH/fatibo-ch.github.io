@@ -113,7 +113,7 @@ if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWo
    et restent sur ce Natel, chiffrées avec le code de verrouillage. */
 const M = (() => {
   const ITER = 210000, AUTOLOCK_MIN = 10;
-  let cfg, key = null, st = null, dl = null, memOnly = false, hiddenAt = 0;
+  let cfg, key = null, st = null, dl = null, memOnly = false, hiddenAt = 0, pendingLien = null, syncing = false;
   let view = { n: 'home', a: null }, stack = [], ui = {};
   const app = () => document.getElementById('app');
 
@@ -219,7 +219,7 @@ const M = (() => {
       e.preventDefault(); const c1 = document.getElementById('code1').value;
       if (c1.length < 4) { err.textContent = t('code_short'); return }
       err.textContent = t('working');
-      if (!exists) { const c2 = document.getElementById('code2').value; if (c1 !== c2) { err.textContent = t('code_mismatch'); return } await createVault(c1); go('donnees'); return }
+      if (!exists) { const c2 = document.getElementById('code2').value; if (c1 !== c2) { err.textContent = t('code_mismatch'); return } await createVault(c1); go('donnees'); if (pendingLien && cfg.autoSync) { const k = pendingLien; pendingLien = null; linkWith(k) } return }
       if (await openVault(c1)) { start() } else { err.textContent = t('code_wrong') }
     });
     document.getElementById('bioopen')?.addEventListener('click', async () => { err.textContent = ''; try { await bioOpen(); start() } catch (e) { err.textContent = t('bio_fail') } });
@@ -228,8 +228,48 @@ const M = (() => {
     if (!bio) setTimeout(() => document.getElementById('code1')?.focus(), 50);
   }
 
+  /* ---------- mise à jour automatique : paquet chiffré publié par l'ordinateur à côté de l'application ----------
+     Format MT1 : « MT1 » | sel (16) | iv (16) | données AES-256-CBC (JSON compressé gzip) | HMAC-SHA256 (32). Clés : PBKDF2-SHA256(clé de liaison, sel, 100 000) → 64 octets. */
+  async function autoSync(force) {
+    if (!cfg.autoSync || !st || !st.syncKey || syncing) return;
+    if (!force && st.syncAt && Date.now() - Date.parse(st.syncAt) < 10 * 60e3) return;
+    syncing = true;
+    try {
+      const r = await fetch(cfg.autoSync + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('net');
+      const b = new Uint8Array(await r.arrayBuffer());
+      if (b.length < 100 || String.fromCharCode(b[0], b[1], b[2]) !== 'MT1') throw new Error('fmt');
+      const salt = b.slice(3, 19), iv = b.slice(19, 35), ct = b.slice(35, b.length - 32), mac = b.slice(b.length - 32);
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(st.syncKey), 'PBKDF2', false, ['deriveBits']);
+      const km = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, base, 512));
+      const mk = await crypto.subtle.importKey('raw', km.slice(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+      if (!await crypto.subtle.verify('HMAC', mk, mac, b.slice(0, b.length - 32))) { st.syncErr = 'cle'; await save(); return }
+      const ek = await crypto.subtle.importKey('raw', km.slice(0, 32), { name: 'AES-CBC' }, false, ['decrypt']);
+      const z = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, ek, ct);
+      const text = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      const made = (text.match(/"made"\s*:\s*"([^"]+)"/) || [])[1] || '';
+      st.syncAt = new Date().toISOString(); st.syncErr = '';
+      if (made !== st.syncMade) { st.syncMade = made; await importFiles([new File([text], cfg.bundle)], true) } else { await save(); if (view.n === 'donnees') render() }
+    } catch (e) { if (st) { st.syncErr = 'reseau'; if (view.n === 'donnees') render() } }
+    finally { syncing = false }
+  }
+  function syncCard() {
+    if (!cfg.autoSync || !st) return '';
+    const when = st.syncAt ? new Date(st.syncAt).toLocaleString(lang() === 'de' ? 'de-CH' : 'fr-CH', { dateStyle: 'short', timeStyle: 'short' }) : '–';
+    if (st.syncKey) return `<section class="card"><b>${t('auto_title')} <span class="chip ok">${t('auto_active')}</span></b><span class="small muted">${t('auto_on', { d: when })}</span>
+      ${st.syncErr === 'cle' ? `<p class="note warn">${t('auto_badkey')}</p>` : st.syncErr === 'reseau' ? `<span class="small muted">${t('auto_net')}</span>` : ''}
+      <div class="bar"><button class="btn" data-a="syncnow">${t('auto_now')}</button><button class="btn sm" data-a="unlink">${t('auto_off')}</button></div></section>`;
+    return `<section class="card"><b>${t('auto_title')}</b><span class="small muted">${t('auto_how')}</span>
+      <input id="lienkey" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX">
+      <button class="btn pri" data-a="link">${t('auto_link')}</button></section>`;
+  }
+  async function linkWith(k) {
+    k = String(k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!/^[A-Z2-9]{24}$/.test(k)) { toast(t('auto_badfmt')); return false }
+    st.syncKey = k; st.syncAt = ''; st.syncMade = ''; st.syncErr = ''; await save(); toast(t('auto_linked')); await autoSync(true); render(); return true;
+  }
+
   /* ---------- import de fichiers ---------- */
-  async function importFiles(files) {
+  async function importFiles(files, auto) {
     const ok = [], bad = [];
     const one = (o, name, date) => {
       const r = (o && o.app === 'natel-dossiers' && Array.isArray(o.groups)) ? { key: 'dossiers', label: 'src_dossiers', data: o } : cfg.detect(o, name);
@@ -252,7 +292,7 @@ const M = (() => {
     cfg.onImport && cfg.onImport();
     await save();
     render();
-    toast(ok.length ? t('imported', { n: ok.join(', ') }) + (bad.length ? ' · ' + t('ignored', { n: bad.length }) : '') : t('nothing_imported'));
+    toast(auto ? t('auto_done') : ok.length ? t('imported', { n: ok.join(', ') }) + (bad.length ? ' · ' + t('ignored', { n: bad.length }) : '') : t('nothing_imported'));
   }
   const src = k => st?.sources?.[k]?.data;
   const srcInfo = k => st?.sources?.[k];
@@ -309,7 +349,7 @@ const M = (() => {
     });
     document.addEventListener('input', e => { const el = e.target; if (el.dataset && el.dataset.live) { ui[el.dataset.live] = el.value; clearTimeout(bind.t); bind.t = setTimeout(render, 120) } });
     document.addEventListener('change', e => { const el = e.target; if (el.id === 'filepick' && el.files?.length) { importFiles([...el.files]); el.value = '' } else if (el.dataset && el.dataset.ui) { ui[el.dataset.ui] = el.value; render() } });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (key && hiddenAt && Date.now() - hiddenAt > AUTOLOCK_MIN * 60e3) lock() });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (key && hiddenAt && Date.now() - hiddenAt > AUTOLOCK_MIN * 60e3) lock(); else if (key) autoSync(false) });
     window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (key && cfg.views[h] && h !== view.n) go(h) });
   }
 
@@ -352,6 +392,7 @@ const M = (() => {
       <section class="card"><b>${t('update_title')}</b><span class="small muted">${t('update_txt', { f: '<b>' + esc(cfg.bundle) + '</b>' })}</span>
         <input type="file" id="filepick" accept=".json,application/json,text/plain" multiple hidden>
         <button class="btn pri" data-a="pick">${t('choose_files')}</button><span class="small muted">${t('other_files')}</span></section>
+      ${syncCard()}
       <section class="sec"><h3>${t('sources')}</h3><div class="list">${S}</div></section>
       ${memOnly ? `<p class="note warn">${t('mem_only')}</p>` : ''}
       <section class="card"><b>${t('security')}</b><span class="small muted">${t('security_txt')}</span>
@@ -396,12 +437,14 @@ const M = (() => {
     const h = location.hash.slice(1);
     const hasData = cfg.sources.some(s => srcInfo(s.key));
     view = { n: hasData ? (cfg.views[h] ? h : 'home') : 'donnees', a: null }; stack = []; render();
+    if (pendingLien && cfg.autoSync) { const k = pendingLien; pendingLien = null; linkWith(k) } else autoSync(true);
   }
   async function init(c) {
     cfg = c;
+    try { const m = location.hash.match(/lien=([A-Za-z0-9-]{24,40})/); if (m) { pendingLien = m[1]; history.replaceState(null, '', location.pathname + location.search) } } catch (e) { }
     cfg.views.notes = vNotes; cfg.views.donnees = vData; cfg.views.dossiers = vDossiers; cfg.sources = cfg.sources.concat([{ key: 'dossiers', label: 'src_dossiers', where: 'src_dossiers_where' }]);
     const userActions = cfg.actions || {};
-    cfg.actions = new Proxy(userActions, { get(o, a) { if (o[a]) return o[a]; if (['noteadd', 'notedone', 'notedel', 'notepurge', 'notesfile', 'notefor'].includes(a)) return (el, e) => noteActions(a, el, e); if (a === 'wipeask') return () => { document.getElementById('wipeconf').hidden = false }; if (a === 'wipe') return wipe; if (a === 'bioon') return async () => { try { await bioEnable(); toast(t('bio_done')) } catch (e) { toast(e && e.message === 'noprf' ? t('bio_noprf') : t('bio_fail')) } fillBioBar() }; if (a === 'biooff') return async () => { await bioDisable(); fillBioBar() }; return undefined } });
+    cfg.actions = new Proxy(userActions, { get(o, a) { if (o[a]) return o[a]; if (['noteadd', 'notedone', 'notedel', 'notepurge', 'notesfile', 'notefor'].includes(a)) return (el, e) => noteActions(a, el, e); if (a === 'syncnow') return async () => { toast(t('working')); st.syncMade = ''; await autoSync(true); render() }; if (a === 'link') return () => linkWith(document.getElementById('lienkey')?.value); if (a === 'unlink') return async () => { delete st.syncKey; st.syncErr = ''; await save(); render() }; if (a === 'wipeask') return () => { document.getElementById('wipeconf').hidden = false }; if (a === 'wipe') return wipe; if (a === 'bioon') return async () => { try { await bioEnable(); toast(t('bio_done')) } catch (e) { toast(e && e.message === 'noprf' ? t('bio_noprf') : t('bio_fail')) } fillBioBar() }; if (a === 'biooff') return async () => { await bioDisable(); fillBioBar() }; return undefined } });
     document.title = cfg.name;
     bind();
     renderLock();
@@ -438,7 +481,7 @@ const CORE_T = {
     nav: 'Navigation', back: 'Retour', lock: 'Verrouiller', lock_now: 'Verrouiller maintenant', code: 'Code de verrouillage', code_new: 'Choisissez un code de verrouillage (au moins 4 caractères)', code_again: 'Répétez le code', unlock: 'Ouvrir', create: 'Créer et continuer',
     lock_intro: 'Entrez votre code pour ouvrir les données de ce Natel.', first_intro: 'Première ouverture sur ce Natel.', first_note: 'Le code protège les données enregistrées sur ce Natel. Sans lui, elles ne peuvent pas être lues. Il n’est enregistré nulle part : si vous l’oubliez, il suffit de tout effacer et de recharger les fichiers.',
     code_short: 'Au moins 4 caractères.', code_mismatch: 'Les deux codes ne sont pas identiques.', code_wrong: 'Code incorrect.', working: 'Un instant…', forgot: 'Code oublié ?', forgot_txt: 'Les données de ce Natel ne peuvent pas être récupérées sans le code. Vous pouvez tout effacer ici, puis recharger les fichiers depuis OneDrive. Rien n’est perdu sur l’ordinateur.', wipe_all: 'Tout effacer de ce Natel', wipe_sure: 'Effacer toutes les données et les notes de ce Natel ?', wipe_yes: 'Oui, effacer',
-    store_fail: 'Ce Natel ne permet pas d’enregistrer : les données restent seulement jusqu’à la fermeture.', imported: 'Chargé : {n}', ignored: '{n} fichier(s) non reconnu(s)', nothing_imported: 'Aucun fichier reconnu. Choisissez les fichiers indiqués ci-dessous.',
+    auto_title: 'Mise à jour automatique', auto_active: 'active', auto_on: 'À chaque ouverture, l’application va chercher les nouvelles données préparées par l’ordinateur. Dernière vérification : {d}.', auto_net: 'Pas de connexion au dernier essai : les données déjà sur ce Natel restent utilisables.', auto_badkey: 'La clé ne correspond plus à celle de l’ordinateur. Touchez « Arrêter », puis reliez à nouveau ce Natel.', auto_now: 'Vérifier maintenant', auto_off: 'Arrêter', auto_how: 'Une seule fois : sur l’ordinateur, ouvrir My Tibo › Mes ordinateurs › « Natel », puis scanner le code avec l’appareil photo. Ou taper ici la clé de liaison.', auto_link: 'Relier ce Natel', auto_linked: 'Natel relié : les données se mettront à jour toutes seules.', auto_badfmt: 'Clé incomplète : 24 lettres et chiffres.', auto_done: 'Données mises à jour automatiquement.', store_fail: 'Ce Natel ne permet pas d’enregistrer : les données restent seulement jusqu’à la fermeture.', imported: 'Chargé : {n}', ignored: '{n} fichier(s) non reconnu(s)', nothing_imported: 'Aucun fichier reconnu. Choisissez les fichiers indiqués ci-dessous.',
     notes: 'Notes', note_new: 'Nouvelle note', note_ph: 'Ce que vous voulez reprendre à l’ordinateur…', no_domain: 'Sans domaine', save: 'Enregistrer', to_handle: 'À reprendre', handled: 'Reprises', no_notes: 'Aucune note en attente.', done: 'Reprise', reopen: 'Rouvrir', del: 'Supprimer', del_sure: 'Sûr ?', purge_done: 'Supprimer les notes reprises',
     notes_send: 'Envoyer les notes vers l’ordinateur', notes_send_txt: 'Copiez les notes en attente puis collez-les dans un courriel, OneNote ou Teams ; ou enregistrez-les comme fichier dans OneDrive.', copy_all: 'Copier les notes', save_file: 'Enregistrer comme fichier', copied: 'Copié.', copy_manual: 'Sélectionnez le texte et copiez-le.', save_declined: 'Enregistrement annulé.', note_empty: 'La note est vide.', note_saved: 'Note enregistrée.',
     data: 'Données', update_title: 'Mettre à jour les données', update_txt: 'Touchez le bouton, puis choisissez dans OneDrive FSSPX › dossier « Natel » le fichier {f}. L’ordinateur le tient à jour tout seul. Il reste sur ce Natel, chiffré.', other_files: 'On peut aussi choisir directement les fichiers d’origine, un ou plusieurs à la fois.', stale: 'Les données datent d’il y a {n} jours. Touchez ici pour les mettre à jour.', choose_files: 'Choisir les fichiers', sources: 'Fichiers', file_of: 'Fichier du', loaded_on: 'chargé le', up_to_date: 'à jour', old_days: 'il y a {n} jours', missing: 'pas encore chargé',
@@ -452,7 +495,7 @@ const CORE_T = {
     nav: 'Navigation', back: 'Zurück', lock: 'Sperren', lock_now: 'Jetzt sperren', code: 'Sperrcode', code_new: 'Wählen Sie einen Sperrcode (mindestens 4 Zeichen)', code_again: 'Code wiederholen', unlock: 'Öffnen', create: 'Anlegen und weiter',
     lock_intro: 'Geben Sie Ihren Code ein, um die Daten auf diesem Handy zu öffnen.', first_intro: 'Erstes Öffnen auf diesem Handy.', first_note: 'Der Code schützt die auf diesem Handy gespeicherten Daten. Ohne ihn sind sie nicht lesbar. Er wird nirgends gespeichert: Wenn Sie ihn vergessen, alles löschen und die Dateien neu laden.',
     code_short: 'Mindestens 4 Zeichen.', code_mismatch: 'Die beiden Codes stimmen nicht überein.', code_wrong: 'Falscher Code.', working: 'Einen Moment…', forgot: 'Code vergessen?', forgot_txt: 'Ohne Code lassen sich die Daten dieses Handys nicht wiederherstellen. Sie können hier alles löschen und die Dateien aus OneDrive neu laden. Auf dem Computer geht nichts verloren.', wipe_all: 'Alles auf diesem Handy löschen', wipe_sure: 'Alle Daten und Notizen auf diesem Handy löschen?', wipe_yes: 'Ja, löschen',
-    store_fail: 'Dieses Handy erlaubt kein Speichern: Die Daten bleiben nur bis zum Schliessen.', imported: 'Geladen: {n}', ignored: '{n} Datei(en) nicht erkannt', nothing_imported: 'Keine Datei erkannt. Wählen Sie die unten genannten Dateien.',
+    auto_title: 'Automatische Aktualisierung', auto_active: 'aktiv', auto_on: 'Bei jedem Öffnen holt die App die neuen Daten, die der Computer vorbereitet. Letzte Prüfung: {d}.', auto_net: 'Beim letzten Versuch keine Verbindung: die Daten auf diesem Handy bleiben nutzbar.', auto_badkey: 'Der Schlüssel passt nicht mehr zum Computer. «Beenden» antippen und das Handy neu verbinden.', auto_now: 'Jetzt prüfen', auto_off: 'Beenden', auto_how: 'Einmalig: am Computer My Tibo › Meine Computer › «Natel» öffnen und den Code mit der Kamera scannen. Oder hier den Verbindungsschlüssel eingeben.', auto_link: 'Handy verbinden', auto_linked: 'Handy verbunden: die Daten aktualisieren sich von selbst.', auto_badfmt: 'Schlüssel unvollständig: 24 Buchstaben und Ziffern.', auto_done: 'Daten automatisch aktualisiert.', store_fail: 'Dieses Handy erlaubt kein Speichern: Die Daten bleiben nur bis zum Schliessen.', imported: 'Geladen: {n}', ignored: '{n} Datei(en) nicht erkannt', nothing_imported: 'Keine Datei erkannt. Wählen Sie die unten genannten Dateien.',
     notes: 'Notizen', note_new: 'Neue Notiz', note_ph: 'Was Sie am Computer erledigen wollen…', no_domain: 'Ohne Bereich', save: 'Speichern', to_handle: 'Zu erledigen', handled: 'Erledigt', no_notes: 'Keine offenen Notizen.', done: 'Erledigt', reopen: 'Wieder öffnen', del: 'Löschen', del_sure: 'Sicher?', purge_done: 'Erledigte Notizen löschen',
     notes_send: 'Notizen an den Computer senden', notes_send_txt: 'Offene Notizen kopieren und in eine E-Mail, OneNote oder Teams einfügen; oder als Datei in OneDrive speichern.', copy_all: 'Notizen kopieren', save_file: 'Als Datei speichern', copied: 'Kopiert.', copy_manual: 'Text markieren und kopieren.', save_declined: 'Speichern abgebrochen.', note_empty: 'Die Notiz ist leer.', note_saved: 'Notiz gespeichert.',
     data: 'Daten', update_title: 'Daten aktualisieren', update_txt: 'Tippen Sie auf die Schaltfläche und wählen Sie in OneDrive FSSPX › Ordner «Natel» die Datei {f}. Der Computer hält sie selbst aktuell. Sie bleibt verschlüsselt auf diesem Handy.', other_files: 'Man kann auch direkt die ursprünglichen Dateien wählen, eine oder mehrere.', stale: 'Die Daten sind {n} Tage alt. Hier tippen zum Aktualisieren.', choose_files: 'Dateien wählen', sources: 'Dateien', file_of: 'Datei vom', loaded_on: 'geladen am', up_to_date: 'aktuell', old_days: 'vor {n} Tagen', missing: 'noch nicht geladen',
