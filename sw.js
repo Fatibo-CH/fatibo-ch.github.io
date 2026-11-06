@@ -1,5 +1,5 @@
 // MyWil et My Tibo – travail hors ligne. Ne contient aucune donnée : seulement le programme.
-const C='natel-2026-11-06b';const SHELL=['./','index.html','wil.html','tibo.html','wil.webmanifest','tibo.webmanifest','wil-192.png','wil-512.png','wil-touch.png','tibo-192.png','tibo-512.png','tibo-touch.png'];
+const C='natel-2026-11-06c';const SHELL=['./','index.html','wil.html','tibo.html','wil.webmanifest','tibo.webmanifest','wil-192.png','wil-512.png','wil-touch.png','tibo-192.png','tibo-512.png','tibo-touch.png','pdf.min.js','pdf.worker.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);
