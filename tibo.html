@@ -627,10 +627,11 @@ const CORE_T = {
       nd_contacts: 'Contacts', nd_frais: 'Frais', nd_projets: 'Projets', nd_apostolat: 'Apostolat', nd_perso: 'Personnel', no_entries: 'Aucune entrée.', src_lf: 'Mgr Lefebvre – photos', src_lf_where: 'Mgr Lefebvre › _MyTibo (catalogue)', src_lf_docs: 'Mgr Lefebvre – documents', src_wm: 'Webmaster – état du travail', src_wm_where: 'Webmaster CH - Documents (préparé par l’ordinateur)',
       lefebvre: 'Mgr Lefebvre', lf_photos: 'Photos', lf_docs: 'Documents', lf_voy: 'Voyages', h_note: 'Note', h_etapes: 'étapes', h_encours: 'en cours', h_dossiers: 'Dossiers', h_wm: 'Webmaster – en cours', h_lfday: 'Mgr Lefebvre – ce jour-là', fresh_at: 'Mis à jour {d} à {h}', today_s2: 'aujourd’hui', fresh_today: 'Mis à jour à {h}', lf_year_n: '{n} étape(s)', lf_also: 'Cette année-là', lf_src_web: 'source en ligne', lf_prev: 'Année précédente', lf_next: 'Année suivante', lf_all_years: 'Toutes les années', lf_no_year: 'Sans date', lf_none: 'Le catalogue Mgr Lefebvre n’est pas encore sur ce Natel. Chargez MyTibo-Natel.json dans Données.', lf_open: 'Ouvrir', pages: '{n} p.', lf_count: '{p} photos · {d} documents',
       webmaster: 'Webmaster', wm_none: 'L’état du travail de webmaster n’est pas encore sur ce Natel. Chargez MyTibo-Natel.json dans Données.', wm_02: 'En cours', wm_01: 'Déposés – à regarder', wm_05: 'En attente', wm_04: 'Publiés (45 derniers jours)', wm_files: '{n} fichier(s)', wm_bulletins: 'Bulletins des prieurés – {m}', wm_missing: 'manquant', wm_notyet: 'pas encore reçu', wm_received: 'reçu – à mettre en ligne', wm_done: 'traité', wm_vorwort: 'Dernier jour du mois : préparer aujourd’hui l’avant-propos (Vorwort) du supérieur.', wm_pfr: 'Article du supérieur : prioritaire', days_ago: 'il y a {n} j', today_s: 'aujourd’hui', wm_summary: '{c} en cours · {d} déposé(s) · {b} bulletin(s) à traiter',
-      go_wil: 'MyWil', go_wil_txt: 'Sancta Maria Wil', year: 'Année {y}', rate: 'taux {r} CHF/km'
+      intentions: 'Intentions de messe', no_int: 'Les intentions de messe ne sont pas encore sur ce Natel.', src_int: 'Intentions de messe', src_int_where: 'PTF - Documents › Intentions de messe › intentions.json', int_next: 'Prochains jours', int_dt: 'À une date précise', int_q: 'À la suite, dans l’ordre', int_free: 'libre', int_today: 'Messe d’aujourd’hui', int_todo: '{n} à célébrer', int_ro: 'Consultation seulement : on coche et on modifie sur l’ordinateur (My Tibo › Intentions de messe).', nd_intentions: 'Intentions', go_wil: 'MyWil', go_wil_txt: 'Sancta Maria Wil', year: 'Année {y}', rate: 'taux {r} CHF/km'
     })
   };
   function detect(o, name) {
+    if (o && Array.isArray(o.intentions) && o.reglages) return { key: 'intentions', label: 'src_int', data: o };
     if (o && o.app === 'natel-config') return { key: 'config', label: 'src_lf', data: o };
     if (o && Array.isArray(o.entrees) && o.sources) return { key: 'lf_carnet', label: 'src_lf', data: o };
     if (o && Array.isArray(o.contacts)) return { key: 'carnet', label: 'src_carnet', data: o };
@@ -719,6 +720,23 @@ const CORE_T = {
         <span class="small muted">${esc(t('year', { y: F.annee }))} : CHF ${chf(yearTot)}</span></section>
       <div class="list">${(m.lignes || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(l => `<div class="row"><div class="date"><b>${+(l.date || '').slice(8, 10) || ''}</b><span>${esc(M.wd(l.date || today()))}</span></div><div class="m"><b>${esc(l.lib || '–')}</b>${l.km ? `<small>${l.km} km</small>` : ''}${l.don ? `<small>${t('dons')} ${chf(l.don)}</small>` : ''}</div><div class="s num"><b>${chf(l.montant)}</b></div></div>`).join('') || `<div class="empty">—</div>`}</div>
       <div>${noteBtn('Frais ' + MONTHS[cur - 1], 'frais')}</div>`;
+  }
+
+  function vIntentions() {
+    const I = src('intentions'); if (!I) return `<h1>${t('intentions')}</h1><div class="card"><b>${t('no_int')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const A = (I.intentions || []).filter(x => x.statut === 'a'), lab = x => (x.defunt ? '† ' : '') + x.intention;
+    const D = A.filter(x => x.mode === 'date' && x.date).sort((a, b) => (a.date + (a.heure || '')).localeCompare(b.date + (b.heure || '')));
+    const Q = A.filter(x => !(x.mode === 'date' && x.date)).sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    const add = (s, n) => { const [y, m, d] = s.split('-').map(Number); const x = new Date(y, m - 1, d + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0') };
+    const d0 = today(); let days = '';
+    for (let i = 0; i < 14; i++) { const d = add(d0, i), its = D.filter(x => x.date === d);
+      days += `<div class="row"><div class="date"><b>${+d.slice(8, 10)}</b><span>${esc(M.wd(d))}</span></div><div class="m">${its.length ? its.map(x => `<b>${esc(lab(x))}</b>${x.heure ? `<small>${esc(x.heure)}</small>` : ''}`).join('') : `<small class="muted">${t('int_free')}</small>`}</div></div>` }
+    const row = x => `<div class="row"><div class="m"><b>${esc(lab(x))}</b><small>${[x.mode === 'date' && x.date ? fmtD(x.date) : '', x.donateur ? esc(x.donateur) : '', x.honoraire !== '' && x.honoraire != null ? 'CHF ' + chf(x.honoraire) : ''].filter(Boolean).join(' · ')}</small>${x.note ? `<small class="txt">${esc(x.note)}</small>` : ''}</div></div>`;
+    return `<h1>${t('intentions')} <span class="muted small">${t('int_todo', { n: A.length })}</span></h1>
+      <section class="card"><h3>${t('int_next')}</h3><div class="list">${days}</div></section>
+      <section class="card"><h3>${t('int_dt')} (${D.length})</h3><div class="list">${D.map(row).join('') || `<div class="empty">—</div>`}</div></section>
+      <section class="card"><h3>${t('int_q')} (${Q.length})</h3><div class="list">${Q.map(row).join('') || `<div class="empty">—</div>`}</div></section>
+      <p class="small muted">${t('int_ro')}</p><div>${noteBtn('Intentions de messe', 'intentions')}</div>`;
   }
 
   function vProjets() {
@@ -840,7 +858,7 @@ const CORE_T = {
 
   function vMore() {
     const tile = (v, icon, label) => `<button class="tile" data-a="go" data-v="${v}">${ICON[icon]}<b>${t(label)}</b></button>`;
-    return `<h1>${t('more')}</h1><div class="grid">${tile('lefebvre', 'book', 'lefebvre')}${tile('webmaster', 'link', 'webmaster')}${tile('projets', 'flag', 'projets')}${tile('dossiers', 'folder', 'dossiers')}${tile('donnees', 'data', 'data')}
+    return `<h1>${t('more')}</h1><div class="grid">${tile('lefebvre', 'book', 'lefebvre')}${tile('webmaster', 'link', 'webmaster')}${tile('intentions', 'cross', 'intentions')}${tile('projets', 'flag', 'projets')}${tile('dossiers', 'folder', 'dossiers')}${tile('donnees', 'data', 'data')}
       ${window.WIL_URL ? `<a class="tile" href="${window.WIL_URL}" target="_blank" rel="noopener">${ICON.link}<b>${t('go_wil')}</b><small>${t('go_wil_txt')}</small></a>` : ''}</div>`;
   }
 
@@ -880,14 +898,14 @@ const CORE_T = {
   torOpen().then(ok => { if (!ok) return;
   M.init({
     bundle: 'MyTibo-Natel.json', autoSync: 'tibo-data.bin', notesRepo: 'Fatibo-CH/fatibo-ch.github.io', id: 'mytibo', name: 'My Tibo', langs: ['fr'], T, logo: window.LOGO,
-    sources: [{ key: 'carnet', label: 'src_carnet', where: 'src_carnet_where' }, { key: 'frais', label: 'src_frais', where: 'src_frais_where' }, { key: 'projets', label: 'src_projets', where: 'src_projets_where' }, { key: 'lf_photos', label: 'src_lf', where: 'src_lf_where' }, { key: 'webmaster', label: 'src_wm', where: 'src_wm_where' }],
+    sources: [{ key: 'carnet', label: 'src_carnet', where: 'src_carnet_where' }, { key: 'intentions', label: 'src_int', where: 'src_int_where' }, { key: 'frais', label: 'src_frais', where: 'src_frais_where' }, { key: 'projets', label: 'src_projets', where: 'src_projets_where' }, { key: 'lf_photos', label: 'src_lf', where: 'src_lf_where' }, { key: 'webmaster', label: 'src_wm', where: 'src_wm_where' }],
     onImport() { LF = null }, onLock() { LF = null },
     detect,
     freshness() { const sa = M.st && (M.st.syncMade || M.st.syncAt); if (sa) { const d = new Date(sa), iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); return esc((iso === today()) ? t('fresh_today', { h: d.toTimeString().slice(0, 5) }) : t('fresh_at', { d: fmtD(iso), h: d.toTimeString().slice(0, 5) })) } const i = srcInfo('carnet') || srcInfo('frais'); return i ? 'Données du ' + esc(fmtD((i.fileDate || i.importedAt).slice(0, 10))) : 'Pater Thibaud Favre' },
     tabs: [{ v: 'home', icon: 'home', label: 'home' }, { v: 'contacts', icon: 'phone', label: 'contacts' }, { v: 'frais', icon: 'cash', label: 'frais' }, { v: 'notes', icon: 'note', label: 'notes' }, { v: 'more', icon: 'more', label: 'more' }],
     tabOf: { contact: 'contacts' },
-    noteDomains: { contacts: 'nd_contacts', frais: 'nd_frais', projets: 'nd_projets', apostolat: 'nd_apostolat', perso: 'nd_perso' },
-    views: { lefebvre: vLefebvre, webmaster: vWebmaster, home: vHome, contacts: vContacts, contact: vContact, frais: vFrais, projets: vProjets, more: vMore },
+    noteDomains: { intentions: 'nd_intentions', contacts: 'nd_contacts', frais: 'nd_frais', projets: 'nd_projets', apostolat: 'nd_apostolat', perso: 'nd_perso' },
+    views: { intentions: vIntentions, lefebvre: vLefebvre, webmaster: vWebmaster, home: vHome, contacts: vContacts, contact: vContact, frais: vFrais, projets: vProjets, more: vMore },
     actions: { lfyear(el) { ui.lt = 'voyages'; ui.ly = el.dataset.v; M.go('lefebvre') }, qsearch() { ui.cq = document.getElementById('hq').value; M.go('contacts') } }
   });
   });
