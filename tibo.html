@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My Tibo</title>
+<meta name="description" content="My Tibo sur le Natel">
+<meta name="theme-color" content="#2b4a66">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="tibo.webmanifest">
+<link rel="icon" href="tibo-192.png">
+<link rel="apple-touch-icon" href="tibo-touch.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="My Tibo">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: une colonne de lecture au Natel, barre d'onglets fixe en bas ; sur grand écran, colonne centrée de 720px */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#1b211c; --muted:#5b665e; --line:#d5ded6; --tint:#eef3f7;
+  --accent:#2b4a66; --accent2:#3a6288; --gold:#9a6a1c; --red:#a3242f; --amber:#a45f00;
+  --display:"Spectral",Georgia,"Times New Roman",serif; --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --navh:62px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121613;--surface:#1b211d;--ink:#e8eee9;--muted:#9eab9f;--line:#2e3a31;--tint:#212a23;--accent:#8fc79f;--accent2:#7fbf91;--gold:#d9b06a;--red:#ef8f97;--amber:#f0b45a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121613;--surface:#1b211d;--ink:#e8eee9;--muted:#9eab9f;--line:#2e3a31;--tint:#212a23;--accent:#8fc79f;--accent2:#7fbf91;--gold:#d9b06a;--red:#ef8f97;--amber:#f0b45a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:16px/1.45 var(--body);-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding-block:12px calc(var(--navh) + 28px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:26px;line-height:1.15}
+h2{font-size:20px;line-height:1.2}
+h3{font:600 12.5px var(--body);letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+a{color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:14px}
+.top{display:flex;align-items:center;gap:12px}
+.top img{width:42px;height:42px;border-radius:50%;flex:none;background:#fff;object-fit:cover}
+.top .tt{flex:1;min-width:0}
+.top .tt b{display:block;font:700 20px/1.1 var(--display)}
+.top .tt span{font-size:13px;color:var(--muted)}
+.pill{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer}
+.hero{background:var(--accent);color:#fff;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+:root[data-theme="dark"] .hero{color:#0f1a12}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hero{color:#0f1a12}}
+.hero small{font:600 12px var(--body);letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.hero .fest{font:700 22px/1.2 var(--display)}
+.hero .slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.hero .slots span{background:rgba(255,255,255,.16);border-radius:8px;padding:3px 8px;font-size:14px}
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec-h a,.linkbtn{font:600 14px var(--body);color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:none}
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;width:100%;text-decoration:none}
+.row:first-child{border-top:0}
+button.row,a.row{cursor:pointer}
+button.row:active,a.row:active{background:var(--tint)}
+.row .m{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .m b{font-weight:600}
+.row .m small{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.row .s{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}
+.date{flex:none;width:46px;text-align:center;line-height:1.05;font-variant-numeric:tabular-nums}
+.date b{display:block;font:700 20px var(--display)}
+.date span{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.chip{display:inline-block;border-radius:999px;padding:2px 9px;font:600 12.5px var(--body);background:var(--tint);color:var(--muted);white-space:nowrap}
+.chip.red{color:var(--red)} .chip.amber{color:var(--amber)} .chip.ok{color:var(--accent)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--line);vertical-align:0;margin-right:6px}
+.empty{padding:18px 14px;color:var(--muted);font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.kv{display:grid;grid-template-columns:minmax(90px,34%) 1fr;gap:6px 12px;margin:0}
+.kv dt{color:var(--muted);font-size:14px} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.txt{white-space:pre-wrap;overflow-wrap:anywhere}
+input[type=search],input[type=text],input[type=password],textarea,select{width:100%;font:16px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+textarea{min-height:110px;resize:vertical}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:11px 16px;font:600 15px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn.sm{padding:6px 11px;font-size:13.5px;border-radius:10px}
+.btn.danger{color:var(--red)}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tabs button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:600 14px var(--body);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;color:inherit;text-decoration:none;font:inherit;cursor:pointer;text-align:left}
+.tile svg{width:26px;height:26px;color:var(--accent)}
+.tile b{font:600 16px var(--display)} .tile small{color:var(--muted);font-size:13px}
+nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabbar a{flex:1;max-width:144px;height:var(--navh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);text-decoration:none;font:600 11.5px var(--body)}
+nav.tabbar a[aria-current="page"]{color:var(--accent)}
+nav.tabbar svg{width:23px;height:23px}
+svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lock{min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:16px;max-width:420px;margin:0 auto;padding-block:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.lock img{width:84px;height:84px;border-radius:50%;background:#fff;object-fit:cover}
+.err{color:var(--red);font-size:14px;min-height:1em}
+.note{font-size:14px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
+.warn{border-color:var(--amber);color:var(--ink)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--navh) + 16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:15px;z-index:20;max-width:calc(100% - 32px)}
+.num{font-variant-numeric:tabular-nums}
+.copy{user-select:all;-webkit-user-select:all}
+.hl{background:var(--tint);border-radius:6px;padding:0 4px}
+@media (prefers-reduced-motion:no-preference){.row,.tile,.btn{transition:background .12s}}
+
+/* (2026-11-07) pas de rechargement du navigateur en tirant vers le bas : l'application actualise elle-même */
+html,body{overscroll-behavior-y:none}
+#ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:60;transform:translate(-50%,-50px);opacity:0;background:var(--surface,#fff);color:var(--accent,#1f5230);border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:8px 16px;font-weight:600;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.15);transition:opacity .15s;pointer-events:none;white-space:nowrap}
+.pin{-webkit-text-security:disc;text-security:disc;letter-spacing:.2em}
+
+</style></head><body>
+<div id="app"></div>
+<script>window.STANDALONE=true;window.LOGO="tibo-192.png";window.WIL_URL="https://kgz-sancta-maria.github.io/wil.html";
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+<script>
+'use strict';
+/* ============ Noyau commun des applications Natel ============
+   Le code est en ligne ; les données viennent de fichiers choisis sur le Natel (OneDrive / SharePoint)
+   et restent sur ce Natel, chiffrées avec le code de verrouillage. */
+const M = (() => {
+  const ITER = 210000, AUTOLOCK_MIN = 10;
+  let cfg, key = null, st = null, dl = null, memOnly = false, hiddenAt = 0, pendingLien = null, syncing = false, pushing = false;
+  let view = { n: 'home', a: null }, stack = [], ui = {};
+  const app = () => document.getElementById('app');
+
+  /* ---------- petits outils ---------- */
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pad = n => String(n).padStart(2, '0');
+  const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const today = () => iso(new Date());
+  const parse = s => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1) };
+  const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d) };
+  const diffDays = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
+  const locale = () => (lang() === 'de' ? 'de-CH' : 'fr-CH');
+  const fmtD = (s, o) => { if (!s) return ''; try { return parse(s).toLocaleDateString(locale(), o || { day: 'numeric', month: 'numeric', year: 'numeric' }) } catch (e) { return s } };
+  const fmtLong = s => fmtD(s, { weekday: 'long', day: 'numeric', month: 'long' });
+  const wd = s => fmtD(s, { weekday: 'short' }).replace('.', '');
+  const mon = s => fmtD(s, { month: 'short' }).replace('.', '');
+  const chf = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const LS = { get(k) { try { return localStorage.getItem(k) } catch (e) { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch (e) { } } };
+  function lang() { return cfg.langs.includes(LS.get(cfg.id + '-lang')) ? LS.get(cfg.id + '-lang') : cfg.langs[0] }
+  function t(k, p) { const D = cfg.T[lang()] || cfg.T[cfg.langs[0]]; let s = D[k] ?? cfg.T[cfg.langs[0]][k] ?? k; if (p) for (const x in p) s = s.split('{' + x + '}').join(p[x]); return s }
+  function toast(msg) { let el = document.getElementById('toast'); if (!el) { el = document.createElement('div'); el.id = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el) } el.textContent = msg; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2600) }
+
+  /* ---------- chiffrement ---------- */
+  const b64 = u8 => { let s = ''; const a = new Uint8Array(u8); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s) };
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  async function derive(pw, salt, iter) { const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter || ITER, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']) }
+  async function enc(obj, k) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, new TextEncoder().encode(JSON.stringify(obj))); return { iv: b64(iv), ct: b64(ct) } }
+  async function dec(o, k) { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(o.iv) }, k, unb64(o.ct)); return JSON.parse(new TextDecoder().decode(pt)) }
+
+  /* ---------- stockage local (IndexedDB) ---------- */
+  let dbp = null, docsMem = null;
+  function idb() { if (!dbp) dbp = new Promise((res, rej) => { try { const r = indexedDB.open('natel-' + cfg.id, 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) } catch (e) { rej(e) } }); return dbp }
+  async function kvGet(k) { const d = await idb(); return new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error) }) }
+  async function kvSet(k, v) { const d = await idb(); return new Promise((res, rej) => { const tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error) }) }
+  async function kvDel(k) { const d = await idb(); return new Promise(res => { const tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); tx.oncomplete = () => res(); tx.onerror = () => res() }) }
+  /* Coffre v2 : les données sont chiffrées par une clé aléatoire (DEK) ;
+     cette clé est enveloppée une fois par le code, et éventuellement une fois par l'empreinte (WebAuthn PRF). */
+  let saving = Promise.resolve(), dekRaw = null;
+  const rnd = n => crypto.getRandomValues(new Uint8Array(n));
+  const aes = raw => crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  async function wrapWith(k, raw) { const iv = rnd(12); return { iv: b64(iv), ct: b64(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, raw)) } }
+  async function unwrapWith(k, w) { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(w.iv) }, k, unb64(w.ct))) }
+  function save() { if (!key || !st || memOnly) return saving; saving = saving.then(async () => { try { const v = await enc(st, key); const o = await kvGet('vault'); o.iv = v.iv; o.ct = v.ct; await kvSet('vault', o) } catch (e) { memOnly = true; toast(t('store_fail')) } }); return saving }
+  async function hasVault() { try { return !!(await kvGet('vault')) } catch (e) { memOnly = true; return false } }
+  async function codeWrap(code, raw) { const salt = rnd(16); const k = await derive(code, salt); return Object.assign({ salt: b64(salt), iter: ITER }, await wrapWith(k, raw)) }
+  async function createVault(code) {
+    dekRaw = rnd(32); key = await aes(dekRaw); st = { sources: {}, notes: [], v: 2 };
+    if (!memOnly) { try { const v = await enc(st, key); await kvSet('vault', { v: 2, iv: v.iv, ct: v.ct, wraps: { code: await codeWrap(code, dekRaw) } }) } catch (e) { memOnly = true } }
+  }
+  async function openWithRaw(o, raw) { const k = await aes(raw); st = await dec(o, k); key = k; dekRaw = raw; st.sources = st.sources || {}; st.notes = st.notes || [] }
+  async function openVault(code) {
+    const o = await kvGet('vault');
+    if (o.v !== 2) { /* ancien format : clé dérivée du code → migration */
+      const k = await derive(code, unb64(o.salt), o.iter); let d; try { d = await dec(o, k) } catch (e) { return false }
+      dekRaw = rnd(32); key = await aes(dekRaw); st = d; st.sources = st.sources || {}; st.notes = st.notes || [];
+      const v = await enc(st, key); await kvSet('vault', { v: 2, iv: v.iv, ct: v.ct, wraps: { code: await codeWrap(code, dekRaw) } }); return true }
+    try { const w = o.wraps.code; const raw = await unwrapWith(await derive(code, unb64(w.salt), w.iter), w); await openWithRaw(o, raw); return true } catch (e) { return false }
+  }
+  /* ---------- empreinte digitale (WebAuthn + extension PRF) ---------- */
+  const bioPossible = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext && window.self === window.top);
+  async function prfKey(secret) { const base = await crypto.subtle.importKey('raw', secret, 'HKDF', false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode(cfg.id + '-bio'), info: new Uint8Array() }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']) }
+  async function bioGet(credId, prfSalt) {
+    const a = await navigator.credentials.get({ publicKey: { challenge: rnd(32), rpId: location.hostname, allowCredentials: [{ type: 'public-key', id: unb64(credId) }], userVerification: 'required', timeout: 60000, extensions: { prf: { eval: { first: unb64(prfSalt) } } } } });
+    const r = a.getClientExtensionResults()?.prf?.results?.first; if (!r) throw new Error('noprf'); return new Uint8Array(r);
+  }
+  async function bioEnable() {
+    if (!bioPossible()) throw new Error('nobio');
+    const prfSalt = rnd(32);
+    const c = await navigator.credentials.create({ publicKey: { challenge: rnd(32), rp: { name: cfg.name, id: location.hostname }, user: { id: rnd(16), name: cfg.name, displayName: cfg.name }, pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }], authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' }, timeout: 60000, extensions: { prf: { eval: { first: prfSalt } } } } });
+    const credId = b64(c.rawId); let secret = c.getClientExtensionResults()?.prf?.results?.first;
+    if (c.getClientExtensionResults()?.prf?.enabled === false) throw new Error('noprf');
+    secret = secret ? new Uint8Array(secret) : await bioGet(credId, b64(prfSalt));
+    const o = await kvGet('vault'); o.wraps.bio = Object.assign({ credId, prfSalt: b64(prfSalt) }, await wrapWith(await prfKey(secret), dekRaw)); await kvSet('vault', o);
+  }
+  async function bioOpen() { const o = await kvGet('vault'); const w = o.wraps?.bio; const secret = await bioGet(w.credId, w.prfSalt); await openWithRaw(o, await unwrapWith(await prfKey(secret), w)) }
+  async function bioDisable() { const o = await kvGet('vault'); delete o.wraps.bio; await kvSet('vault', o) }
+  async function hasBio() { try { const o = await kvGet('vault'); return !!o?.wraps?.bio } catch (e) { return false } }
+  function lock() { key = null; st = null; dekRaw = null; docsMem = null; cfg.onLock && cfg.onLock(); stack = []; renderLock() }
+  async function wipe() { try { await kvDel('vault'); await kvDel('docs') } catch (e) { } key = null; st = null; dekRaw = null; docsMem = null; cfg.onLock && cfg.onLock(); renderLock() }
+
+  async function renderLock(errMsg) {
+    const exists = memOnly ? false : await hasVault();
+    const bio = exists && bioPossible() && await hasBio();
+    document.body.classList.remove('in');
+    app().innerHTML = `<div class="lock">
+      <img src="${cfg.logo}" alt="">
+      <div><h1>${esc(cfg.name)}</h1><p class="muted" style="margin:6px 0 0">${exists ? t('lock_intro') : t('first_intro')}</p></div>
+      ${cfg.langs.length > 1 ? `<div class="bar">${langBtn()}</div>` : ''}
+      ${bio ? `<button class="btn pri" id="bioopen" type="button">${ICON.finger} ${t('bio_open')}</button>` : ''}
+      <form id="lockf" class="sec" autocomplete="off">
+        <label for="code1" class="small muted">${exists ? t('code') : t('code_new')}</label>
+        <input id="code1" class="pin" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other" required minlength="4">
+        ${exists ? '' : `<label for="code2" class="small muted">${t('code_again')}</label><input id="code2" class="pin" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other" required minlength="4">`}
+        <div class="err" id="lockerr">${esc(errMsg || '')}</div>
+        <button class="btn ${bio ? '' : 'pri'}" type="submit">${exists ? t('unlock') : t('create')}</button>
+      </form>
+      ${exists ? `<details><summary class="small muted">${t('forgot')}</summary><p class="small muted">${t('forgot_txt')}</p><button class="btn danger sm" id="wipe" type="button">${t('wipe_all')}</button></details>` : `<p class="note">${t('first_note')}</p>`}
+    </div>`;
+    const f = document.getElementById('lockf'), err = document.getElementById('lockerr');
+    f.addEventListener('submit', async e => {
+      e.preventDefault(); const c1 = document.getElementById('code1').value;
+      if (c1.length < 4) { err.textContent = t('code_short'); return }
+      err.textContent = t('working');
+      if (!exists) { const c2 = document.getElementById('code2').value; if (c1 !== c2) { err.textContent = t('code_mismatch'); return } await createVault(c1); go('donnees'); if (pendingLien && cfg.autoSync) { const k = pendingLien; pendingLien = null; linkWith(k) } return }
+      if (await openVault(c1)) { start() } else { err.textContent = t('code_wrong') }
+    });
+    document.getElementById('bioopen')?.addEventListener('click', async () => { err.textContent = ''; try { await bioOpen(); start() } catch (e) { err.textContent = t('bio_fail') } });
+    document.getElementById('wipe')?.addEventListener('click', wipe);
+    bindLang();
+    if (!bio) setTimeout(() => document.getElementById('code1')?.focus(), 50);
+  }
+
+  /* ---------- mise à jour automatique : paquet chiffré publié par l'ordinateur à côté de l'application ----------
+     Format MT1 : « MT1 » | sel (16) | iv (16) | données AES-256-CBC (JSON compressé gzip) | HMAC-SHA256 (32). Clés : PBKDF2-SHA256(clé de liaison, sel, 100 000) → 64 octets. */
+  async function mt1Km(pass, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, base, 512));
+  }
+  async function mt1Enc(text, pass) {
+    const z = new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+    const salt = rnd(16), iv = rnd(16), km = await mt1Km(pass, salt);
+    const ek = await crypto.subtle.importKey('raw', km.slice(0, 32), { name: 'AES-CBC' }, false, ['encrypt']);
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-CBC', iv }, ek, z));
+    const body = new Uint8Array(35 + ct.length); body.set([77, 84, 49]); body.set(salt, 3); body.set(iv, 19); body.set(ct, 35);
+    const mk = await crypto.subtle.importKey('raw', km.slice(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const mac = new Uint8Array(await crypto.subtle.sign('HMAC', mk, body));
+    const out = new Uint8Array(body.length + 32); out.set(body); out.set(mac, body.length); return out;
+  }
+  /* ---------- notes : elles partent toutes seules vers My Tibo sur l'ordinateur (chiffrées, par GitHub), puis disparaissent d'ici une fois arrivées ---------- */
+  const ghH = () => ({ Authorization: 'Bearer ' + st.notesTok, Accept: 'application/vnd.github+json' });
+  const notesAuto = () => !!(cfg.notesRepo && st && st.syncKey && st.notesTok);
+  async function pushNotes() {
+    if (!notesAuto() || pushing) return 0; pushing = true; let n0 = 0;
+    try {
+      for (const n of st.notes.filter(x => !x.sent)) {
+        const blob = await mt1Enc(JSON.stringify({ v: 1, app: cfg.id, id: n.id, d: n.d, dom: n.dom || '', domLabel: n.dom && cfg.noteDomains[n.dom] ? t(cfg.noteDomains[n.dom]) : '', ref: n.ref || null, text: n.text }), st.syncKey);
+        let r;
+        try { r = await fetch(`https://api.github.com/repos/${cfg.notesRepo}/issues`, { method: 'POST', cache: 'no-store', headers: Object.assign({ 'Content-Type': 'application/json' }, ghH()), body: JSON.stringify({ title: 'natel-note ' + cfg.id, body: b64(blob) }) }) }
+        catch (e) { st.notesErr = 'reseau'; st.notesErrTxt = String(e && e.message || e); break }
+        if (r.status === 401 || r.status === 403 || r.status === 404) { st.notesErr = 'jeton'; st.notesErrTxt = 'GitHub ' + r.status; break }
+        if (!r.ok) { st.notesErr = 'http'; st.notesErrTxt = 'GitHub ' + r.status; break }
+        const j = await r.json(); n.sent = j.number; st.notesErr = ''; st.notesErrTxt = ''; n0++;
+      }
+      st.notesTry = new Date().toISOString();
+      await save();
+    } catch (e) { st.notesErr = 'autre'; st.notesErrTxt = String(e && e.message || e) } finally { pushing = false }
+    if (n0 && view.n === 'notes') render();
+    return n0;
+  }
+  /* (2026-11-07) état de l'envoi automatique, en clair, avec la raison quand ça ne marche pas */
+  function notesState() {
+    const L = (f, d) => lang() === 'de' ? d : f;
+    const waiting = st.notes.filter(x => !x.sent).length;
+    if (!cfg.notesRepo) return { ok: false, txt: L('Cette application n’envoie pas les notes.', 'Diese App sendet keine Notizen.') };
+    if (!st.syncKey) return { ok: false, txt: L('Envoi automatique PAS actif : ce Natel n’est pas encore relié à l’ordinateur. Onglet « Données » → entrer la clé de liaison (dans My Tibo › Mes ordinateurs, code QR).', 'Automatisches Senden NICHT aktiv: dieses Handy ist noch nicht mit dem Computer verbunden. Register «Daten» → Verbindungsschlüssel eingeben (in My Tibo › Mes ordinateurs, QR-Code).') };
+    if (!st.notesTok) return { ok: false, txt: L('Envoi automatique PAS encore prêt : le Natel n’a pas encore reçu la clé d’envoi de l’ordinateur. Appuyez sur « Envoyer maintenant ».', 'Automatisches Senden noch NICHT bereit: das Handy hat den Sendeschlüssel vom Computer noch nicht erhalten. «Jetzt senden» drücken.') };
+    if (st.notesErr === 'jeton') return { ok: false, txt: L('GitHub refuse la clé d’envoi (' + (st.notesErrTxt || '') + ') : sur l’ordinateur, My Tibo › Natel › clé des notes : elle doit avoir le droit « Issues : Read and write ».', 'GitHub lehnt den Sendeschlüssel ab (' + (st.notesErrTxt || '') + '): am Computer in My Tibo › Natel den Notiz-Schlüssel mit «Issues: Read and write» erneuern.') };
+    if (st.notesErr) return { ok: false, txt: L('Dernier essai d’envoi raté (' + (st.notesErrTxt || st.notesErr) + '). Vérifiez la connexion Internet, puis « Envoyer maintenant ».', 'Letzter Sendeversuch fehlgeschlagen (' + (st.notesErrTxt || st.notesErr) + '). Internet prüfen, dann «Jetzt senden».') };
+    return { ok: true, txt: waiting ? L(waiting + ' note(s) pas encore partie(s) – elles partent dès que le Natel a Internet.', waiting + ' Notiz(en) noch nicht gesendet – sie gehen, sobald das Handy Internet hat.') : L('Envoi automatique actif : les notes partent toutes seules vers l’ordinateur.', 'Automatisches Senden aktiv: die Notizen gehen von selbst an den Computer.') };
+  }
+  /* (2026-11-07) Envoi par OneDrive : le Natel crée un petit fichier avec les notes, Android le dépose dans OneDrive › Natel › Notes ; l'ordinateur le reprend tout seul. */
+  async function shareOneDrive() {
+    const L = (f, d) => lang() === 'de' ? d : f;
+    const P = st.notes.filter(n => !n.done && !n.od);
+    if (!P.length) { toast(L('Aucune nouvelle note à envoyer.', 'Keine neue Notiz zu senden.')); return }
+    const now = new Date(), pad = x => String(x).padStart(2, '0');
+    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const data = { app: cfg.id, made: now.toISOString(), notes: P.map(n => ({ v: 1, app: cfg.id, id: n.id, d: n.d, dom: n.dom || '', domLabel: n.dom && cfg.noteDomains[n.dom] ? t(cfg.noteDomains[n.dom]) : '', ref: n.ref || null, text: n.text })) };
+    const name = `${cfg.id}-notes-${stamp}.txt`;
+    const file = new File([JSON.stringify(data, null, 1)], name, { type: 'text/plain' });
+    let ok = false;
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); ok = true }
+      else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove(); ok = true }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      /* secours : copier le texte pour le coller dans un courriel à soi-même */
+      try { await navigator.clipboard.writeText(P.map(n => n.text).join('\n\n')) } catch (_) { }
+      toast(L('Partage refusé par le téléphone (' + ((e && (e.name || e.message)) || e) + '). Le texte est copié.', 'Teilen vom Handy abgelehnt (' + ((e && (e.name || e.message)) || e) + '). Text kopiert.')); return }
+    if (ok) { const iso = now.toISOString(); P.forEach(n => n.od = iso); await save(); render(); toast(L(P.length + ' note(s) envoyée(s) – choisir OneDrive › Natel › Notes', P.length + ' Notiz(en) gesendet – OneDrive › Natel › Notes wählen')) }
+  }
+  async function sendNow() {
+    const L = (f, d) => lang() === 'de' ? d : f;
+    toast(t('working'));
+    if (st.syncKey && !st.notesTok) { st.syncMade = ''; await autoSync(true) }
+    const n = await pushNotes(); await checkReceipts(); render();
+    const s = notesState(); toast(n ? L(n + ' note(s) envoyée(s).', n + ' Notiz(en) gesendet.') : s.ok ? L('Rien à envoyer.', 'Nichts zu senden.') : s.txt);
+  }
+  async function checkReceipts() {
+    if (!notesAuto()) return; const S = st.notes.filter(x => x.sent); if (!S.length) return; let gone = 0;
+    for (const n of S) { try { const r = await fetch(`https://api.github.com/repos/${cfg.notesRepo}/issues/${n.sent}?t=${Date.now()}`, { headers: ghH(), cache: 'no-store' }); if (!r.ok) continue; const j = await r.json(); if (j.state === 'closed') { st.notes = st.notes.filter(x => x !== n); gone++ } } catch (e) { } }
+    if (gone) { await save(); toast(t('notes_arrived', { n: gone })); if (['notes', 'home'].includes(view.n)) render() }
+  }
+  async function notesSync() { await pushNotes(); await checkReceipts() }
+  /* heure à laquelle l'ordinateur a préparé les données reçues (pas l'heure de la vérification) */
+  function madeTxt() { const m = st && st.syncMade; const d = m ? new Date(m) : null; if (!d || isNaN(d)) return '–'; const hm = d.toTimeString().slice(0, 5); return d.toDateString() === new Date().toDateString() ? hm : d.getDate() + '.' + (d.getMonth() + 1) + '. ' + hm }
+  async function autoSync(force) {
+    if (!cfg.autoSync || !st || !st.syncKey || syncing) return;
+    if (!force && st.syncAt && Date.now() - Date.parse(st.syncAt) < 60e3) { notesSync(); return }
+    syncing = true;
+    try {
+      const r = await fetch(cfg.autoSync + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('net');
+      const b = new Uint8Array(await r.arrayBuffer());
+      if (b.length < 100 || String.fromCharCode(b[0], b[1], b[2]) !== 'MT1') throw new Error('fmt');
+      const salt = b.slice(3, 19), iv = b.slice(19, 35), ct = b.slice(35, b.length - 32), mac = b.slice(b.length - 32);
+      const km = await mt1Km(st.syncKey, salt);
+      const mk = await crypto.subtle.importKey('raw', km.slice(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+      if (!await crypto.subtle.verify('HMAC', mk, mac, b.slice(0, b.length - 32))) { st.syncErr = 'cle'; await save(); return }
+      const ek = await crypto.subtle.importKey('raw', km.slice(0, 32), { name: 'AES-CBC' }, false, ['decrypt']);
+      const z = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, ek, ct);
+      let text = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      if (/^\{\s*"app"\s*:\s*"natel-lien"/.test(text)) { const w = JSON.parse(text); if (w.jeton) st.notesTok = w.jeton; else delete st.notesTok; text = w.paquet ? JSON.stringify(w.paquet) : '' }
+      const made = (text.match(/"made"\s*:\s*"([^"]+)"/) || [])[1] || '';
+      st.syncAt = new Date().toISOString(); st.syncErr = '';
+      if (!text) { await save(); if (view.n === 'donnees') render() }
+      else if (made !== st.syncMade) { st.syncMade = made; await importFiles([new File([text], cfg.bundle)], true) } else { await save(); if (view.n === 'donnees') render() }
+    } catch (e) { if (st) { st.syncErr = 'reseau'; if (view.n === 'donnees') render() } }
+    finally { syncing = false }
+    notesSync();
+  }
+  function syncCard() {
+    if (!cfg.autoSync || !st) return '';
+    const when = st.syncAt ? new Date(st.syncAt).toLocaleString(lang() === 'de' ? 'de-CH' : 'fr-CH', { dateStyle: 'short', timeStyle: 'short' }) : '–';
+    const NO = cfg.notesOnly;
+    if (st.syncKey) return `<section class="card"><b>${t(NO ? 'auto_title_n' : 'auto_title')} <span class="chip ok">${t('auto_active')}</span></b><span class="small muted">${NO ? t('auto_on_n', { d: when }) : t('auto_on', { d: when })}</span>
+      ${st.syncErr === 'cle' ? `<p class="note warn">${t('auto_badkey')}</p>` : st.syncErr === 'reseau' ? `<span class="small muted">${t('auto_net')}</span>` : ''}
+      <div class="bar"><button class="btn" data-a="syncnow">${t('auto_now')}</button><button class="btn sm" data-a="unlink">${t('auto_off')}</button></div></section>`;
+    return `<section class="card"><b>${t(NO ? 'auto_title_n' : 'auto_title')}</b><span class="small muted">${t(NO ? 'auto_how_n' : 'auto_how')}</span>
+      <input id="lienkey" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX">
+      <button class="btn pri" data-a="link">${t('auto_link')}</button></section>`;
+  }
+  async function linkWith(k) {
+    k = String(k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!/^[A-Z2-9]{24}$/.test(k)) { toast(t('auto_badfmt')); return false }
+    st.syncKey = k; st.syncAt = ''; st.syncMade = ''; st.syncErr = ''; await save(); toast(t(cfg.notesOnly ? 'auto_linked_n' : 'auto_linked')); await autoSync(true); render(); return true;
+  }
+
+  /* ---------- import de fichiers ---------- */
+  async function importFiles(files, auto) {
+    const ok = [], bad = [];
+    const one = (o, name, date) => {
+      const r = (o && o.app === 'natel-dossiers' && Array.isArray(o.groups)) ? { key: 'dossiers', label: 'src_dossiers', data: o } : cfg.detect(o, name);
+      if (!r) return false;
+      st.sources[r.key] = { name, label: r.label, importedAt: new Date().toISOString(), fileDate: date || '', data: r.data };
+      if (!ok.includes(t(r.label))) ok.push(t(r.label)); return true;
+    };
+    for (const f of files) {
+      try {
+        const text = await f.text(); let o; try { o = JSON.parse(text) } catch (e) { bad.push(f.name); continue }
+        if (o && o.app === 'natel-paquet' && Array.isArray(o.files)) { /* paquet préparé par l'ordinateur : plusieurs fichiers en un */
+          const pdfs = o.files.filter(x => x.kind === 'pdf' && x.b64);
+          if (pdfs.length) { docsMem = pdfs.map(x => ({ name: x.name, date: x.date, grp: x.grp || '', draft: !!x.draft, b64: x.b64 })); st.docsInfo = { n: pdfs.length, date: o.made || new Date().toISOString() }; if (!memOnly) { try { await kvSet('docs', await enc({ list: docsMem }, key)) } catch (e) { } } if (!ok.includes(t('src_plans'))) ok.push(t('src_plans')) }
+          for (const x of o.files.filter(x => x.kind !== 'pdf')) { try { one(typeof x.text === 'string' ? JSON.parse(x.text.replace(/^\uFEFF/, '')) : x.content, x.name, x.date) || bad.push(x.name) } catch (e) { bad.push(x.name) } }
+          continue;
+        }
+        if (!one(o, f.name, f.lastModified ? new Date(f.lastModified).toISOString() : '')) bad.push(f.name);
+      } catch (e) { bad.push(f.name) }
+    }
+    cfg.onImport && cfg.onImport();
+    await save();
+    render();
+    toast(auto ? t('auto_done') : ok.length ? t('imported', { n: ok.join(', ') }) + (bad.length ? ' · ' + t('ignored', { n: bad.length }) : '') : t('nothing_imported'));
+  }
+  const src = k => st?.sources?.[k]?.data;
+  const srcInfo = k => st?.sources?.[k];
+
+  /* ---------- notes ---------- */
+  function addNote(text, dom, ref) { st.notes.unshift({ id: uid(), d: new Date().toISOString(), text, dom: dom || '', ref: ref || null, done: false }); return save() }
+  function notesText(onlyOpen) {
+    const N = st.notes.filter(n => !onlyOpen || !n.done);
+    return `${cfg.name} – ${t('notes')} (${fmtD(today())})\n\n` + N.map(n => `• ${fmtD(n.d.slice(0, 10))} ${n.d.slice(11, 16)}${n.dom ? ' [' + (cfg.noteDomains[n.dom] ? t(cfg.noteDomains[n.dom]) : n.dom) + ']' : ''}${n.ref ? ' – ' + n.ref.label : ''}\n  ${n.text.replace(/\n/g, '\n  ')}`).join('\n\n');
+  }
+
+  /* ---------- navigation ---------- */
+  function go(n, a, push) { if (push) stack.push(view); else stack = []; view = { n, a }; if (!push && location.hash.slice(1) !== n) { try { history.replaceState(null, '', '#' + n) } catch (e) { location.hash = n } } render(); window.scrollTo(0, 0) }
+  function back() { view = stack.pop() || { n: 'home' }; render() }
+
+  function header() {
+    const info = cfg.freshness ? cfg.freshness() : '';
+    return `<header class="top"><img src="${cfg.logo}" alt=""><div class="tt"><b>${esc(cfg.name)}</b><span>${info}</span></div>
+      ${cfg.langs.length > 1 ? langBtn() : ''}<button class="pill" data-a="lock" aria-label="${t('lock')}">${ICON.lock}</button></header>`;
+  }
+  const langBtn = () => `<button class="pill" data-a="lang" type="button">${lang() === 'fr' ? 'Deutsch' : 'Français'}</button>`;
+  function bindLang() { app().querySelectorAll('[data-a="lang"]').forEach(b => b.addEventListener('click', () => { LS.set(cfg.id + '-lang', lang() === 'fr' ? 'de' : 'fr'); key ? render() : renderLock() })) }
+  function tabbar() { const cur = cfg.tabs.find(x => x.v === view.n) ? view.n : (cfg.tabOf?.[view.n] || 'more'); return `<nav class="tabbar" aria-label="${t('nav')}">${cfg.tabs.map(x => `<a href="#${x.v}" data-a="tab" data-v="${x.v}" ${x.v === cur ? 'aria-current="page"' : ''}>${ICON[x.icon] || ''}<span>${t(x.label)}</span></a>`).join('')}</nav>` }
+
+  function render() {
+    if (!key) return renderLock();
+    document.body.classList.add('in');
+    const fn = cfg.views[view.n] || cfg.views.home;
+    let body; try { body = fn(view.a) } catch (e) { console.error(e); body = `<div class="card"><b>${t('view_err')}</b><span class="small muted">${esc(e.message)}</span></div>` }
+    const focus = document.activeElement && document.activeElement.id, sel = focus && document.activeElement.selectionStart;
+    const ages = cfg.sources.map(s => srcInfo(s.key)).filter(Boolean).map(i => diffDays((i.fileDate || i.importedAt).slice(0, 10), today()));
+    const stale = view.n !== 'donnees' && ages.length && Math.min(...ages) > 3;
+    app().innerHTML = `<div class="wrap">${header()}${stale ? `<button class="note warn" data-a="tab" data-v="donnees" style="text-align:left;cursor:pointer">${t('stale', { n: Math.min(...ages) })}</button>` : ''}${stack.length ? `<div><button class="linkbtn" data-a="back">← ${t('back')}</button></div>` : ''}${body}</div>${tabbar()}`;
+    if (focus) { const el = document.getElementById(focus); if (el && el.matches('input,textarea')) { el.focus(); try { el.setSelectionRange(sel, sel) } catch (e) { } } }
+    bindLang();
+    if (view.n === 'donnees') fillBioBar();
+    try { cfg.after && cfg.after(view.n, view.a) } catch (e) { }
+  }
+
+  /* ---------- événements (délégation) ---------- */
+  function bind() {
+    document.addEventListener('click', async e => {
+      const el = e.target.closest('[data-a]'); if (!el || !key) return;
+      const a = el.dataset.a;
+      if (a === 'lang') return;
+      if (a === 'tab') { e.preventDefault(); go(el.dataset.v); return }
+      if (a === 'go') { e.preventDefault(); go(el.dataset.v, el.dataset.arg ?? null, el.dataset.push !== '0'); return }
+      if (a === 'back') { back(); return }
+      if (a === 'lock') { lock(); return }
+      if (a === 'ui') { ui[el.dataset.k] = el.dataset.val; render(); return }
+      if (a === 'copy') { const txt = el.dataset.txt || document.getElementById(el.dataset.from)?.value || ''; try { await navigator.clipboard.writeText(txt); toast(t('copied')) } catch (err) { const ta = document.getElementById(el.dataset.from); if (ta) { ta.hidden = false; ta.focus(); ta.select() } toast(t('copy_manual')) } return }
+      if (a === 'pick') { document.getElementById('filepick')?.click(); return }
+      if (cfg.actions[a]) cfg.actions[a](el, e);
+    });
+    document.addEventListener('input', e => { const el = e.target; if (el.dataset && el.dataset.live) { ui[el.dataset.live] = el.value; clearTimeout(bind.t); bind.t = setTimeout(render, 120) } });
+    document.addEventListener('change', e => { const el = e.target; if (el.id === 'filepick' && el.files?.length) { importFiles([...el.files]); el.value = '' } else if (el.dataset && el.dataset.ui) { ui[el.dataset.ui] = el.value; render() } });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (key && hiddenAt && Date.now() - hiddenAt > AUTOLOCK_MIN * 60e3) lock(); else if (key) autoSync(false) });
+    window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (key && cfg.views[h] && h !== view.n) go(h) });
+    /* tirer vers le bas : l'application va chercher les nouvelles données elle-même ; le navigateur ne recharge plus la page (ce qui redemandait le code) */
+    (() => {
+      let y0 = null, dy = 0, ind = null;
+      const show = (h, txt) => { if (!ind) { ind = document.createElement('div'); ind.id = 'ptr'; ind.setAttribute('aria-hidden', 'true'); document.body.appendChild(ind) } ind.textContent = txt; ind.style.transform = `translate(-50%,${Math.min(h, 90) - 46}px)`; ind.style.opacity = String(Math.min(1, h / 60)) };
+      const hide = () => { if (ind) { ind.style.opacity = '0'; ind.style.transform = 'translate(-50%,-50px)' } };
+      document.addEventListener('touchstart', e => { const ok = key && cfg.autoSync && st && st.syncKey && (window.scrollY || document.documentElement.scrollTop || 0) <= 0 && e.touches.length === 1 && !document.querySelector('dialog[open]'); y0 = ok ? e.touches[0].clientY : null; dy = 0 }, { passive: true });
+      document.addEventListener('touchmove', e => { if (y0 == null) return; dy = e.touches[0].clientY - y0; if (dy > 12) show(dy * 0.6, t(dy > 120 ? 'pull_release' : 'pull_down')); else hide() }, { passive: true });
+      document.addEventListener('touchend', async () => { if (y0 == null) return; const go_ = dy > 120; y0 = null; if (!go_) { hide(); return } show(80, t('working')); await autoSync(true); hide(); render(); toast(st && st.syncErr ? t(st.syncErr === 'cle' ? 'auto_badkey' : 'auto_net') : t('pull_done', { h: madeTxt() })) });
+    })();
+    /* l'application ouverte se tient à jour toute seule (toutes les 5 minutes) */
+    setInterval(() => { if (key && !document.hidden) autoSync(false) }, 5 * 60e3);
+  }
+
+  /* ---------- vues communes : notes et données ---------- */
+  function vNotes(pref) {
+    const open = st.notes.filter(n => !n.done), done = st.notes.filter(n => n.done);
+    const doms = Object.entries(cfg.noteDomains);
+    const p = pref && typeof pref === 'object' ? pref : {};
+    const row = n => `<div class="row"><div class="m"><small>${fmtD(n.d.slice(0, 10))} · ${n.d.slice(11, 16)}${n.dom && cfg.noteDomains[n.dom] ? ' · ' + t(cfg.noteDomains[n.dom]) : ''}${n.ref ? ' · ' + esc(n.ref.label) : ''}</small><span class="txt" ${n.done ? 'style="text-decoration:line-through;opacity:.6"' : ''}>${esc(n.text)}</span>${n.od ? `<small><span class="chip ok">${lang() === 'de' ? '→ OneDrive' : '→ OneDrive'}</span></small>` : ''}${notesAuto() ? `<small>${n.sent ? `<span class="chip ok">${t('note_sent')}</span>` : `<span class="chip amber">${t('note_wait')}</span>`}</small>` : ''}</div>
+      <div class="s"><button class="btn sm" data-a="notedone" data-id="${n.id}">${n.done ? t('reopen') : t('done')}</button><button class="btn sm danger" data-a="notedel" data-id="${n.id}">${t('del')}</button></div></div>`;
+    return `<h1>${t('notes')}</h1>
+    <form class="card" id="notef" data-ref='${p.ref ? esc(JSON.stringify(p.ref)) : ''}'>
+      ${p.ref ? `<div class="small"><span class="chip ok">${esc(p.ref.label)}</span></div>` : ''}
+      <label for="notetext" class="small muted">${t('note_new')}</label>
+      <textarea id="notetext" placeholder="${esc(t('note_ph'))}"></textarea>
+      <div class="bar" style="align-items:center"><select id="notedom" style="flex:1;min-width:150px"><option value="">${t('no_domain')}</option>${doms.map(([k, l]) => `<option value="${k}" ${p.dom === k ? 'selected' : ''}>${esc(t(l))}</option>`).join('')}</select><button class="btn pri" type="button" data-a="noteadd">${t('save')}</button></div>
+    </form>
+    <section class="sec"><div class="sec-h"><h3>${t('to_handle')} · ${open.length}</h3></div>
+      <div class="list">${open.length ? open.map(row).join('') : `<div class="empty">${t('no_notes')}</div>`}</div></section>
+    <section class="card"><b>${t('notes_send')}</b>${(() => { const s = notesState(); return `<p class="note ${s.ok ? '' : 'warn'}">${s.ok ? '✓ ' : '⚠ '}${esc(s.txt)}</p>` })()}${cfg.autoSync && !st.syncKey ? `<label for="lienkey" class="small"><b>${lang() === 'de' ? 'Verbindungsschlüssel (einmal eingeben):' : 'Clé de liaison (à taper une seule fois) :'}</b></label><input id="lienkey" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"><div class="bar"><button class="btn pri" data-a="link" type="button">${lang() === 'de' ? 'Verbinden' : 'Relier'}</button></div><span class="small muted">${lang() === 'de' ? 'Der Schlüssel steht am Computer auf der Seite «Handy verbinden» (My Tibo).' : 'La clé se trouve sur l’ordinateur, page « Relier le Natel » (My Tibo).'}</span>` : ''}<div class="bar"><button class="btn pri" data-a="notesendnow" type="button">${lang() === 'de' ? 'Jetzt senden' : 'Envoyer maintenant'}</button></div><span class="small muted">${notesAuto() ? t('notes_auto') : t('notes_send_txt')}</span></section>
+    <details class="card" ${notesAuto() && !st.notesErr ? '' : 'open'}><summary class="small">${lang() === 'de' ? 'Andere Wege (OneDrive, kopieren)' : 'Autres moyens (OneDrive, copier)'}</summary>
+        <div><b>${lang() === 'de' ? 'An den Computer senden' : 'Envoyer à l’ordinateur'}</b><span class="small muted">${lang() === 'de' ? 'Ein Tipp: «Über OneDrive senden», dann im Menü «OneDrive» und den Ordner Natel › Notes wählen. Der Computer übernimmt die Notizen von selbst.' : 'Un geste : « Envoyer par OneDrive », puis choisir « OneDrive » et le dossier Natel › Notes. L’ordinateur reprend les notes tout seul.'}</span><div class="bar"><button class="btn pri" data-a="noteod" type="button">${lang() === 'de' ? 'Über OneDrive senden' : 'Envoyer par OneDrive'} (${st.notes.filter(n => !n.done && !n.od).length})</button></div></div>
+
+      <div class="bar"><button class="btn" data-a="copy" data-from="notesexport">${t('copy_all')}</button>${dl || navigator.share ? `<button class="btn" data-a="notesfile">${navigator.share && !dl ? t('share') : t('save_file')}</button>` : ''}</div>
+      <textarea id="notesexport" readonly hidden>${esc(notesText(true))}</textarea></details>
+    ${done.length ? `<section class="sec"><div class="sec-h"><h3>${t('handled')} · ${done.length}</h3><button class="linkbtn" data-a="notepurge">${t('purge_done')}</button></div><div class="list">${done.map(row).join('')}</div></section>` : ''}`;
+  }
+  async function noteActions(a, el) {
+    if (a === 'noteadd') { const tx = document.getElementById('notetext').value.trim(); if (!tx) { toast(t('note_empty')); return } const r = document.getElementById('notef').dataset.ref; await addNote(tx, document.getElementById('notedom').value, r ? JSON.parse(r) : null); view.a = null; render(); toast(t('note_saved')); pushNotes(); return true }
+    if (a === 'notedone') { const n = st.notes.find(x => x.id === el.dataset.id); if (n) { n.done = !n.done; await save(); render() } return true }
+    if (a === 'notedel') { if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = t('del_sure'); return true } st.notes = st.notes.filter(x => x.id !== el.dataset.id); await save(); render(); return true }
+    if (a === 'notepurge') { st.notes = st.notes.filter(x => !x.done); await save(); render(); return true }
+    if (a === 'notesfile') { const txt = notesText(true); try { if (dl) await dl.save({ filename: `${cfg.id}-notes-${today()}.txt`, data: txt }); else await navigator.share({ title: cfg.name + ' – ' + t('notes'), text: txt }) } catch (e) { if (e && e.name !== 'AbortError') toast(t('save_declined')) } return true }
+    if (a === 'notefor') { go('notes', { ref: { label: el.dataset.label, id: el.dataset.id || '' }, dom: el.dataset.dom || '' }, true); setTimeout(() => document.getElementById('notetext')?.focus(), 60); return true }
+    return false;
+  }
+
+  function vData() {
+    const S = cfg.sources.map(s => { const i = srcInfo(s.key); const age = i ? diffDays((i.fileDate || i.importedAt).slice(0, 10), today()) : null;
+      return `<div class="row"><div class="m"><b>${esc(t(s.label))}</b><small>${esc(t(s.where))}</small>${i ? `<small>${t('file_of')} ${fmtD((i.fileDate || i.importedAt).slice(0, 10))} · ${t('loaded_on')} ${fmtD(i.importedAt.slice(0, 10))}</small>` : ''}</div>
+      <div class="s">${i ? `<span class="chip ${age > 7 ? 'amber' : 'ok'}">${age > 7 ? t('old_days', { n: age }) : t('up_to_date')}</span>` : `<span class="chip">${t('missing')}</span>`}</div></div>` }).join('');
+    const AUTO = !!(cfg.autoSync && st.syncKey);
+    const manual = `<section class="card"><b>${t(AUTO ? 'update_title_m' : 'update_title')}</b><span class="small muted">${AUTO ? t(cfg.manualTxt || 'update_txt_auto', { f: '<b>' + esc(cfg.bundle) + '</b>' }) : t('update_txt', { f: '<b>' + esc(cfg.bundle) + '</b>' })}</span>
+        <input type="file" id="filepick" accept=".json,application/json,text/plain" multiple hidden>
+        <button class="btn ${AUTO ? '' : 'pri'}" data-a="pick">${t('choose_files')}</button>${AUTO ? '' : `<span class="small muted">${t('other_files')}</span>`}</section>`;
+    return `<h1>${t('data')}</h1>
+      ${AUTO ? syncCard() + manual : manual + syncCard()}
+      <section class="sec"><h3>${t('sources')}</h3><div class="list">${S}</div></section>
+      ${memOnly ? `<p class="note warn">${t('mem_only')}</p>` : ''}
+      <section class="card"><b>${t('security')}</b><span class="small muted">${t('security_txt')}</span>
+        <div class="bar" id="biobar"></div><div class="bar"><button class="btn" data-a="lock">${t('lock_now')}</button><button class="btn danger" data-a="wipeask">${t('wipe_all')}</button></div>
+        <div id="wipeconf" hidden class="bar"><span class="small">${t('wipe_sure')}</span><button class="btn danger sm" data-a="wipe">${t('wipe_yes')}</button></div></section>
+      ${cfg.dataExtra ? cfg.dataExtra() : ''}`;
+  }
+  async function fillBioBar() {
+    const el = document.getElementById('biobar'); if (!el) return;
+    if (!bioPossible()) { el.innerHTML = `<span class="small muted">${t('bio_unavail')}</span>`; return }
+    el.innerHTML = (await hasBio()) ? `<span class="chip ok">${t('bio_on')}</span><button class="btn sm" data-a="biooff">${t('bio_off')}</button>` : `<button class="btn" data-a="bioon">${ICON.finger} ${t('bio_enable')}</button>`;
+  }
+
+  function vDossiers() {
+    const D = src('dossiers'); const L = lang();
+    if (!D) return `<h1>${t('dossiers')}</h1><div class="card"><b>${t('no_dossiers')}</b><span class="small muted">${t('no_dossiers_txt')}</span><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const lb = x => x[L] || x.fr || x.de || '';
+    return `<h1>${t('dossiers')}</h1><p class="small muted" style="margin:0">${t('dossiers_txt')}</p>
+      ${D.groups.map(g => `<section class="sec"><h3>${esc(lb(g))}</h3><div class="list">${(g.links || []).map(l => `<a class="row" href="${esc(l.url)}" target="_blank" rel="noopener"><div class="m"><b>${esc(lb(l))}</b>${l.sub ? `<small>${esc(l.sub)}</small>` : ''}</div><div class="s">${ICON.folder}</div></a>`).join('')}</div></section>`).join('')}`;
+  }
+
+  /* ---------- documents PDF (plans) ---------- */
+  async function getDocs() { if (docsMem) return docsMem; try { const o = await kvGet('docs'); if (o) docsMem = (await dec(o, key)).list } catch (e) { } return docsMem || [] }
+  let pdfLib = null;
+  function loadPdfLib() { if (pdfLib) return pdfLib; pdfLib = new Promise((res, rej) => { if (window.pdfjsLib) return res(window.pdfjsLib); const sc = document.createElement('script'); sc.src = 'pdf.min.js'; sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js'; res(window.pdfjsLib) }; sc.onerror = () => { pdfLib = null; rej(new Error('pdfjs')) }; document.head.appendChild(sc) }); return pdfLib }
+  async function renderPdf(b64, el) {
+    el.innerHTML = `<p class="muted small">${t('working')}</p>`;
+    try {
+      const lib = await loadPdfLib(); const doc = await lib.getDocument({ isEvalSupported: false, data: unb64(b64) }).promise; el.innerHTML = '';
+      const w = Math.max(320, el.clientWidth || 360), dpr = Math.min(3, (window.devicePixelRatio || 1) * 1.6);
+      for (let i = 1; i <= doc.numPages; i++) {
+        const pg = await doc.getPage(i); const v0 = pg.getViewport({ scale: 1 }); const vp = pg.getViewport({ scale: (w * dpr) / v0.width });
+        const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height); c.style.cssText = 'width:100%;height:auto;display:block;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.15)';
+        el.appendChild(c); await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      }
+    } catch (e) { el.innerHTML = `<p class="note warn">${t('pdf_fail')}</p>` }
+  }
+
+  /* ---------- démarrage ---------- */
+  function start() {
+    cfg.onUnlock && cfg.onUnlock();
+    const h = location.hash.slice(1);
+    const hasData = cfg.sources.some(s => srcInfo(s.key));
+    view = { n: hasData ? (cfg.views[h] ? h : 'home') : 'donnees', a: null }; stack = []; render();
+    if (pendingLien && cfg.autoSync) { const k = pendingLien; pendingLien = null; linkWith(k) } else autoSync(true);
+  }
+  async function init(c) {
+    cfg = c;
+    try { const m = location.hash.match(/lien=([A-Za-z0-9-]{24,40})/); if (m) { pendingLien = m[1]; history.replaceState(null, '', location.pathname + location.search) } } catch (e) { }
+    cfg.views.notes = vNotes; cfg.views.donnees = vData; cfg.views.dossiers = vDossiers; cfg.sources = cfg.sources.concat([{ key: 'dossiers', label: 'src_dossiers', where: 'src_dossiers_where' }]);
+    const userActions = cfg.actions || {};
+    cfg.actions = new Proxy(userActions, { get(o, a) { if (o[a]) return o[a]; if (['noteadd', 'notedone', 'notedel', 'notepurge', 'notesfile', 'notefor'].includes(a)) return (el, e) => noteActions(a, el, e); if (a === 'notesendnow') return () => sendNow(); if (a === 'noteod') return () => shareOneDrive(); if (a === 'syncnow') return async () => { toast(t('working')); st.syncMade = ''; await autoSync(true); render() }; if (a === 'link') return () => linkWith(document.getElementById('lienkey')?.value); if (a === 'unlink') return async () => { delete st.syncKey; st.syncErr = ''; await save(); render() }; if (a === 'wipeask') return () => { document.getElementById('wipeconf').hidden = false }; if (a === 'wipe') return wipe; if (a === 'bioon') return async () => { try { await bioEnable(); toast(t('bio_done')) } catch (e) { toast(e && e.message === 'noprf' ? t('bio_noprf') : t('bio_fail')) } fillBioBar() }; if (a === 'biooff') return async () => { await bioDisable(); fillBioBar() }; return undefined } });
+    document.title = cfg.name;
+    bind();
+    renderLock();
+    try { if (window.claude?.use) { claude.use('downloads').then(d => { dl = d; if (key && view.n === 'notes') render() }).catch(() => { }) } } catch (e) { }
+  }
+  return { init, getDocs, renderPdf, esc, t, lang, today, iso, parse, addDays, diffDays, fmtD, fmtLong, wd, mon, chf, norm, src, srcInfo, ui, go, render, toast, save, derive, unb64, b64, get st() { return st }, get view() { return view }, addNote, pushNotes };
+})();
+
+const ICON = {
+  home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>',
+  cal: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  people: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/></svg>',
+  note: '<svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 12h8M8 16h6"/></svg>',
+  more: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  cross: '<svg viewBox="0 0 24 24"><path d="M12 3v18M7 8h10"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg>',
+  book: '<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg>',
+  group: '<svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5" cy="10" r="2.2"/><circle cx="19" cy="10" r="2.2"/><path d="M7 20c0-2.8 2.2-5 5-5s5 2.2 5 5M1.5 18c.3-2 1.7-3.5 3.5-3.5M22.5 18c-.3-2-1.7-3.5-3.5-3.5"/></svg>',
+  bed: '<svg viewBox="0 0 24 24"><path d="M3 18V7M3 14h18v4M21 14v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11" r="2"/></svg>',
+  car: '<svg viewBox="0 0 24 24"><path d="M5 16V12l2-5h10l2 5v4z"/><path d="M5 12h14"/><circle cx="8" cy="16.5" r="1.6"/><circle cx="16" cy="16.5" r="1.6"/></svg>',
+  data: '<svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>',
+  cash: '<svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>',
+  flag: '<svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  finger: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 11v4c0 2.5-.8 4.5-2 6"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v2c0 3-.7 5.4-1.8 7.4"/><path d="M5.5 15.5c.3-1.4.5-2.9.5-4.5a6 6 0 0 1 12 0v1.5c0 2-.2 3.8-.7 5.5"/><path d="M4 8.5A9 9 0 0 1 20.3 7"/></svg>',
+  folder: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>',
+  link: '<svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>'
+};
+
+/* Textes communs (FR / DE) */
+const CORE_T = {
+  fr: {
+    nav: 'Navigation', back: 'Retour', lock: 'Verrouiller', lock_now: 'Verrouiller maintenant', code: 'Code de verrouillage', code_new: 'Choisissez un code de verrouillage (au moins 4 caractères)', code_again: 'Répétez le code', unlock: 'Ouvrir', create: 'Créer et continuer',
+    lock_intro: 'Entrez votre code pour ouvrir les données de ce Natel.', first_intro: 'Première ouverture sur ce Natel.', first_note: 'Le code protège les données enregistrées sur ce Natel. Sans lui, elles ne peuvent pas être lues. Il n’est enregistré nulle part : si vous l’oubliez, il suffit de tout effacer et de recharger les fichiers.',
+    code_short: 'Au moins 4 caractères.', code_mismatch: 'Les deux codes ne sont pas identiques.', code_wrong: 'Code incorrect.', working: 'Un instant…', pull_down: 'Tirer pour actualiser', pull_release: 'Relâcher pour actualiser', pull_done: 'À jour – données de {h}', forgot: 'Code oublié ?', forgot_txt: 'Les données de ce Natel ne peuvent pas être récupérées sans le code. Vous pouvez tout effacer ici, puis recharger les fichiers depuis OneDrive. Rien n’est perdu sur l’ordinateur.', wipe_all: 'Tout effacer de ce Natel', wipe_sure: 'Effacer toutes les données et les notes de ce Natel ?', wipe_yes: 'Oui, effacer',
+    note_sent: '📤 envoyée à l’ordinateur', note_wait: 'en attente d’envoi', notes_arrived: '{n} note(s) arrivée(s) sur l’ordinateur.', notes_auto: 'Les notes partent toutes seules vers l’ordinateur (page d’accueil, « Notes du Natel »). Une fois arrivées, elles disparaissent d’ici.', auto_title_n: 'Notes vers l’ordinateur', auto_on_n: 'Les notes prises ici partent toutes seules vers l’ordinateur, puis disparaissent d’ici. Dernière vérification : {d}.', auto_how_n: 'Une seule fois : sur l’ordinateur, ouvrir My Tibo › Mes ordinateurs › « Natel », puis scanner le code « MyWil » avec l’appareil photo. Ou taper ici la clé de liaison.', auto_linked_n: 'Natel relié : les notes partiront toutes seules vers l’ordinateur.', notes_tokbad: 'GitHub refuse l’envoi des notes : renouveler la clé des notes sur l’ordinateur (Mes ordinateurs › Natel).', update_title_m: 'Charger un fichier à la main', update_txt_auto: 'Plus besoin : tout arrive tout seul. Seulement pour forcer une mise à jour : choisir {f} dans OneDrive FSSPX › Natel.', auto_title: 'Mise à jour automatique', auto_active: 'active', auto_on: 'À chaque ouverture, l’application va chercher les nouvelles données préparées par l’ordinateur. Dernière vérification : {d}.', auto_net: 'Pas de connexion au dernier essai : les données déjà sur ce Natel restent utilisables.', auto_badkey: 'La clé ne correspond plus à celle de l’ordinateur. Touchez « Arrêter », puis reliez à nouveau ce Natel.', auto_now: 'Vérifier maintenant', auto_off: 'Arrêter', auto_how: 'Une seule fois : sur l’ordinateur, ouvrir My Tibo › Mes ordinateurs › « Natel », puis scanner le code avec l’appareil photo. Ou taper ici la clé de liaison.', auto_link: 'Relier ce Natel', auto_linked: 'Natel relié : les données se mettront à jour toutes seules.', auto_badfmt: 'Clé incomplète : 24 lettres et chiffres.', auto_done: 'Données mises à jour automatiquement.', store_fail: 'Ce Natel ne permet pas d’enregistrer : les données restent seulement jusqu’à la fermeture.', imported: 'Chargé : {n}', ignored: '{n} fichier(s) non reconnu(s)', nothing_imported: 'Aucun fichier reconnu. Choisissez les fichiers indiqués ci-dessous.',
+    notes: 'Notes', note_new: 'Nouvelle note', note_ph: 'Ce que vous voulez reprendre à l’ordinateur…', no_domain: 'Sans domaine', save: 'Enregistrer', to_handle: 'À reprendre', handled: 'Reprises', no_notes: 'Aucune note en attente.', done: 'Reprise', reopen: 'Rouvrir', del: 'Supprimer', del_sure: 'Sûr ?', purge_done: 'Supprimer les notes reprises',
+    notes_send: 'Envoyer les notes vers l’ordinateur', notes_send_txt: 'Copiez les notes en attente puis collez-les dans un courriel, OneNote ou Teams ; ou enregistrez-les comme fichier dans OneDrive.', copy_all: 'Copier les notes', save_file: 'Enregistrer comme fichier', copied: 'Copié.', copy_manual: 'Sélectionnez le texte et copiez-le.', save_declined: 'Enregistrement annulé.', note_empty: 'La note est vide.', note_saved: 'Note enregistrée.',
+    data: 'Données', update_title: 'Mettre à jour les données', update_txt: 'Touchez le bouton, puis choisissez dans OneDrive FSSPX › dossier « Natel » le fichier {f}. L’ordinateur le tient à jour tout seul. Il reste sur ce Natel, chiffré.', other_files: 'On peut aussi choisir directement les fichiers d’origine, un ou plusieurs à la fois.', stale: 'Les données datent d’il y a {n} jours. Touchez ici pour les mettre à jour.', choose_files: 'Choisir les fichiers', sources: 'Fichiers', file_of: 'Fichier du', loaded_on: 'chargé le', up_to_date: 'à jour', old_days: 'il y a {n} jours', missing: 'pas encore chargé',
+    security: 'Sécurité', security_txt: 'L’application se verrouille seule après 10 minutes en arrière-plan. Les données ne quittent pas ce Natel.', mem_only: 'Ce navigateur n’autorise pas l’enregistrement : il faudra recharger les fichiers à chaque ouverture.', view_err: 'Cette page n’a pas pu s’afficher.',
+    bio_open: 'Ouvrir avec l’empreinte', bio_fail: 'L’empreinte n’a pas fonctionné. Entrez le code.', bio_unavail: 'L’empreinte n’est possible que dans l’application installée sur le Natel.', bio_on: 'Empreinte activée', bio_off: 'Désactiver', bio_enable: 'Activer l’empreinte digitale', bio_done: 'Empreinte activée. La prochaine fois, ouvrez avec le doigt.', bio_noprf: 'Ce téléphone ne permet pas encore l’ouverture par empreinte ici. Le code reste nécessaire.', share: 'Envoyer…',
+    dossiers: 'Dossiers', dossiers_txt: 'Un toucher ouvre le dossier dans SharePoint ou OneDrive, avec votre compte. Rien n’est copié sur le Natel.', no_dossiers: 'La liste des dossiers n’est pas encore chargée.', no_dossiers_txt: 'Chargez « Dossiers_Natel.json » dans Données.', src_dossiers: 'Liste des dossiers', src_dossiers_where: 'Dossiers_Natel.json (à côté de vos autres données)',
+    src_plans: 'Plans (PDF)', pdf_fail: 'Ce document n’a pas pu s’afficher.',
+    search: 'Rechercher…', nores: 'Aucun résultat.', all: 'Tout', open_in_maps: 'Itinéraire', copy: 'Copier', note_for: 'Note', today: 'Aujourd’hui', tomorrow: 'Demain', more: 'Plus', home: 'Accueil', see_all: 'Tout voir', no_data_yet: 'Pas encore de données.', load_now: 'Charger les fichiers'
+  }
+};
+
+</script>
+<script>
+'use strict';
+/* ============ My Tibo sur le Natel (français) ============ */
+(() => {
+  const { esc, t, today, fmtD, fmtLong, chf, norm, src, srcInfo, ui, render } = M;
+  const T = {
+    fr: Object.assign({}, CORE_T.fr, {
+      contacts: 'Contacts', frais: 'Frais', projets: 'Projets', all_cats: 'Tous', no_carnet: 'Le carnet d’adresses n’est pas encore sur ce Natel.', no_frais: 'La fiche de frais n’est pas encore sur ce Natel.',
+      month_now: 'Frais de {m}', lines: '{n} ligne(s)', expenses: 'Dépenses', km: 'Kilomètres', km_cost: 'Frais km', dons: 'Dons', total: 'Total', in_progress: 'En cours', finished: 'Terminé', since: 'depuis le {d}',
+      phone: 'Téléphone', email: 'Courriel', address: 'Adresse', org: 'Organisation', fonction: 'Fonction', remark: 'Remarque', category: 'Catégorie', find_contact: 'Chercher un contact…',
+      src_carnet: 'Carnet d’adresses', src_carnet_where: 'OneDrive › Carnet Adresse › carnet.json', src_frais: 'Fiche de frais', src_frais_where: 'OneDrive › Comptabilité › 2026 › frais_2026.json', src_projets: 'Projets en cours', src_projets_where: 'PTF - Documents › MyTibo › Donnees › projets.json',
+      nd_contacts: 'Contacts', nd_frais: 'Frais', nd_projets: 'Projets', nd_apostolat: 'Apostolat', nd_perso: 'Personnel', no_entries: 'Aucune entrée.', src_lf: 'Mgr Lefebvre – photos', src_lf_where: 'Mgr Lefebvre › _MyTibo (catalogue)', src_lf_docs: 'Mgr Lefebvre – documents', src_wm: 'Webmaster – état du travail', src_wm_where: 'Webmaster CH - Documents (préparé par l’ordinateur)',
+      lefebvre: 'Mgr Lefebvre', lf_photos: 'Photos', lf_docs: 'Documents', lf_voy: 'Voyages', h_note: 'Note', h_etapes: 'étapes', h_encours: 'en cours', h_dossiers: 'Dossiers', h_wm: 'Webmaster – en cours', h_lfday: 'Mgr Lefebvre – ce jour-là', fresh_at: 'Mis à jour {d} à {h}', today_s2: 'aujourd’hui', fresh_today: 'Mis à jour à {h}', lf_year_n: '{n} étape(s)', lf_also: 'Cette année-là', lf_src_web: 'source en ligne', lf_prev: 'Année précédente', lf_next: 'Année suivante', lf_all_years: 'Toutes les années', lf_no_year: 'Sans date', lf_none: 'Le catalogue Mgr Lefebvre n’est pas encore sur ce Natel. Chargez MyTibo-Natel.json dans Données.', lf_open: 'Ouvrir', pages: '{n} p.', lf_count: '{p} photos · {d} documents',
+      webmaster: 'Webmaster', wm_none: 'L’état du travail de webmaster n’est pas encore sur ce Natel. Chargez MyTibo-Natel.json dans Données.', wm_02: 'En cours', wm_01: 'Déposés – à regarder', wm_05: 'En attente', wm_04: 'Publiés (45 derniers jours)', wm_files: '{n} fichier(s)', wm_bulletins: 'Bulletins des prieurés – {m}', wm_missing: 'manquant', wm_notyet: 'pas encore reçu', wm_received: 'reçu – à mettre en ligne', wm_done: 'traité', wm_vorwort: 'Dernier jour du mois : préparer aujourd’hui l’avant-propos (Vorwort) du supérieur.', wm_pfr: 'Article du supérieur : prioritaire', days_ago: 'il y a {n} j', today_s: 'aujourd’hui', wm_summary: '{c} en cours · {d} déposé(s) · {b} bulletin(s) à traiter',
+      intentions: 'Intentions de messe', no_int: 'Les intentions de messe ne sont pas encore sur ce Natel.', src_int: 'Intentions de messe', src_int_where: 'PTF - Documents › Intentions de messe › intentions.json', int_next: 'Prochains jours', int_dt: 'À une date précise', int_q: 'À la suite, dans l’ordre', int_free: 'libre', int_today: 'Messe d’aujourd’hui', int_todo: '{n} à célébrer', int_ro: 'Consultation seulement : on coche et on modifie sur l’ordinateur (My Tibo › Intentions de messe).', int_quick: 'Note rapide', int_q_dite: '✓ Une messe est dite', int_q_new: '＋ Intention reçue', int_q_which: 'Quelle intention ?', int_q_other: '— Autre (hors liste) —', int_q_othertxt: 'Si hors liste : pour qui, pour quoi', int_q_date: 'Dite le', int_q_send: 'Noter', int_q_int: 'Intention – pour qui ou pour quoi', int_q_def: 'Pour un défunt (†)', int_q_don: 'Donateur', int_q_hon: 'Honoraire CHF', int_q_nb: 'Nombre de messes', int_q_dd: 'Date demandée (sinon : à la suite)', int_q_rem: 'Remarque', int_q_empty: 'Indiquez l’intention.', int_q_done: 'Noté – à reprendre d’un clic sur l’ordinateur', int_q_txt: 'Ces notes partent vers l’ordinateur (onglet Notes : état de l’envoi). Là-bas, un clic les inscrit.', int_ok: '✓ Dite', int_no: '✗ Pas dite', int_noted_ok: '📤 dite – à valider à l’ordinateur', int_noted_no: '📤 pas dite – à décaler à l’ordinateur', int_undo: 'annuler', fr_quick: 'Note rapide', fr_q_dep: '＋ Dépense', fr_q_km: '🚗 Trajet', fr_q_date: 'Date', fr_q_lib: 'Désignation (en français)', fr_q_mont: 'Montant CHF', fr_q_de: 'De', fr_q_a: 'À', fr_q_km_n: 'Km (total)', fr_q_ar: 'Aller-retour', fr_q_rem: 'Remarque (facultatif)', fr_q_send: 'Noter', fr_q_empty: 'Indiquez la désignation et le montant (ou la destination et les km).', fr_q_done: 'Noté – à valider d’un clic sur l’ordinateur (My Tibo › Frais)', fr_q_txt: 'La note part vers l’ordinateur ; dans My Tibo › Frais, un clic l’inscrit sur la fiche du bon mois.', fr_q_known: 'trajet connu : {k} km par la route', fr_q_unknown: 'trajet nouveau : tapez les km (l’ordinateur peut aussi les calculer)', fr_q_calc: '= CHF {c} (taux {r} CHF/km)', fr_pend: 'À valider à l’ordinateur', fr_pend_sent: '📤 envoyé', fr_pend_wait: '⏳ pas encore envoyé', fr_undo: 'annuler', fr_undo_sent: 'Déjà envoyée : à refuser sur l’ordinateur.', fr_pend_tot: 'en attente : CHF {c}', fr_km_line: '{k} km × {r}', int_noted: 'Noté : un clic suffira sur l’ordinateur pour valider', int_undo_sent: 'Déjà partie vers l’ordinateur : là-bas, cliquez « Ignorer ».', int_sun: 'dimanche – pas d’intention personnelle', int_late: 'À confirmer (date passée)', int_prop: 'date proposée', int_ro2: 'Après la messe : « Dite » prépare une note pour l’ordinateur (My Tibo › Intentions de messe), où un clic suffit pour la valider. Rien n’est coché tout seul. ⛪ = votre messe selon le Zelebrationsplan de Wil.', nd_intentions: 'Intentions', go_wil: 'MyWil', go_wil_txt: 'Sancta Maria Wil', year: 'Année {y}', rate: 'taux {r} CHF/km'
+    })
+  };
+  function detect(o, name) {
+    if (o && Array.isArray(o.intentions) && o.reglages) return { key: 'intentions', label: 'src_int', data: o };
+    if (o && o.app === 'natel-config') return { key: 'config', label: 'src_lf', data: o };
+    if (o && Array.isArray(o.entrees) && o.sources) return { key: 'lf_carnet', label: 'src_lf', data: o };
+    if (o && Array.isArray(o.contacts)) return { key: 'carnet', label: 'src_carnet', data: o };
+    if (o && Array.isArray(o.mois) && o.annee) return { key: 'frais', label: 'src_frais', data: o };
+    if (Array.isArray(o) && o.every(x => x && typeof x === 'object' && 't' in x)) return { key: 'projets', label: 'src_projets', data: o };
+    if (o && o.app === 'natel-webmaster') return { key: 'webmaster', label: 'src_wm', data: o };
+    if (o && o.f && typeof o.f === 'object' && 'v' in o) return { key: 'lf_photos', label: 'src_lf', data: o };
+    if (o && Array.isArray(o.docs) && Array.isArray(o.parts)) return { key: 'lf_docs', label: 'src_lf_docs', data: o };
+    if (o && Array.isArray(o.groupes)) return { key: 'lf_liens', label: 'src_lf', data: o };
+    if (o && typeof o === 'object' && !Array.isArray(o)) { const v = Object.values(o)[0]; if (v && typeof v === 'object' && ('evenement' in v || 'remarques' in v)) return { key: 'lf_fiches', label: 'src_lf', data: o }; if (v && typeof v === 'object' && ('resume' in v || 'genre' in v)) return { key: 'lf_ftextes', label: 'src_lf_docs', data: o } }
+    return null;
+  }
+  const contacts = () => (src('carnet')?.contacts || []);
+  const cName = c => [c.titre, c.prenom, c.nom].filter(Boolean).join(' ') || c.org || '–';
+  const cAddr = a => a ? [a.rue, [a.npa, a.ville].filter(Boolean).join(' '), a.pays].filter(Boolean).join(', ') : '';
+  const mapUrl = a => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(cAddr(a));
+  const line = (v, kind) => `<span class="copy">${esc(v)}</span> <a class="btn sm" href="${kind}:${esc(String(v).replace(/\s/g, ''))}">${kind === 'tel' ? 'Appeler' : 'Écrire'}</a> <button class="btn sm" data-a="copy" data-txt="${esc(v)}">${t('copy')}</button>`;
+  const noteBtn = (label, dom) => `<button class="btn sm" data-a="notefor" data-label="${esc(label)}" data-dom="${dom || ''}">${t('note_for')}</button>`;
+  function monthSum(m, taux) { const L = m.lignes || []; const dep = L.reduce((s, l) => s + (+l.montant || 0), 0), km = L.reduce((s, l) => s + (+l.km || 0), 0), don = L.reduce((s, l) => s + (+l.don || 0), 0); return { dep, km, kmc: km * (taux || 0), don, n: L.length } }
+  const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+  if (!document.getElementById('tibo-home-css')) { const st = document.createElement('style'); st.id = 'tibo-home-css'; st.textContent = `
+    .qk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .qk button,.qk a{display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 4px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:600 13px var(--body);text-decoration:none;cursor:pointer}
+    .qk svg{width:22px;height:22px;color:var(--accent)}.qk small{font:500 11.5px var(--body);color:var(--muted)}
+    .hc{border:1px solid var(--line);border-top:4px solid var(--c,var(--accent));border-radius:14px;background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+    .hc h3{margin:0;font:700 15px var(--body);display:flex;justify-content:space-between;align-items:baseline;gap:8px}.hc h3 button{font:600 13px var(--body);color:var(--accent);background:none;border:0;cursor:pointer;padding:0}
+    .hc .it{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;color:inherit;font:inherit;width:100%;cursor:pointer}.hc .it:first-of-type{border-top:0}
+    .hc .it b{display:block;font-size:14.5px}.hc .it small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}.hc .yr{flex:none;min-width:46px;font:700 15px var(--head,serif);color:var(--accent)}`; document.head.appendChild(st) }
+  function vHome() {
+    const d0 = today(), F = src('frais'), P = (src('projets') || []).filter(p => !p.fait), W0 = src('webmaster'), CV = lfCarnet();
+    const mNow = +d0.slice(5, 7); let m = F ? F.mois.find(x => x.m === mNow) : null, s = m ? monthSum(m, F.taux) : null, mLab = MONTHS[mNow - 1];
+    if (F && (!s || !s.n)) { const prev = F.mois.filter(x => x.m < mNow).map(x => ({ x, s: monthSum(x, F.taux) })).filter(o => o.s.n).pop(); if (prev) { s = prev.s; mLab = MONTHS[prev.x.m - 1] } }
+    const tile = (v, a, ic, l, sub) => `<button data-a="${a}" data-v="${v}">${ICON[ic] || ''}<span>${esc(l)}</span>${sub != null && sub !== '' ? `<small>${esc(String(sub))}</small>` : ''}</button>`;
+    const wm = W0 ? wmStats(W0) : null;
+    /* Mgr Lefebvre : ce jour-là, dans les années passées (± 3 jours) */
+    let lfDay = [];
+    if (CV) { const md = d0.slice(5), near = e => { const x = String(e.debut || ''); if (x.length < 10) return 99; const a = new Date('2001-' + x.slice(5)), b = new Date('2001-' + md); return Math.abs((a - b) / 864e5) }; lfDay = CV.filter(e => near(e) <= 3).sort((a, b) => near(a) - near(b) || a.y - b.y).slice(0, 3) }
+    const WI = W0 ? ((W0.etapes || []).find(e => e.key === '02_En cours')?.items || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 3) : [];
+    return `<section class="hero"><small>${esc(fmtLong(d0))}</small><div class="fest">Bonjour, Pater Favre</div>
+      <form id="qf" class="bar" style="margin-top:6px" onsubmit="return false"><input id="hq" type="search" placeholder="${esc(t('find_contact'))}" value="${esc(ui.cq || '')}" style="flex:1;min-width:0"><button class="btn sm" type="button" data-a="qsearch">OK</button></form></section>
+      <section class="qk">${tile('notes', 'tab', 'note', t('h_note'), M.st.notes.filter(n => !n.done).length || '')}${tile('contacts', 'tab', 'phone', t('contacts'), src('carnet') ? contacts().length : '')}${tile('frais', 'tab', 'cash', t('frais'), s ? 'CHF ' + chf(s.dep + s.kmc) : '')}
+        ${tile('lefebvre', 'go', 'book', t('lefebvre'), CV ? CV.length + ' ' + t('h_etapes') : '')}${tile('webmaster', 'go', 'link', t('webmaster'), wm ? wm.c + ' ' + t('h_encours') : '')}${tile('dossiers', 'go', 'folder', t('h_dossiers'), '')}</section>
+      ${W0 ? `<section class="hc" style="--c:#a3242b"><h3>${t('h_wm')}<button data-a="go" data-v="webmaster">${t('see_all')}</button></h3>
+        ${WI.map(x => `<button class="it" data-a="go" data-v="webmaster"><div><b>${esc(x.name)}</b><small>${esc([x.grp, x.dir ? t('wm_files', { n: x.n }) : '', ago(x.date)].filter(Boolean).join(' · '))}</small></div></button>`).join('')}
+        <small class="muted">${t('wm_summary', wm)}</small></section>` : ''}
+      ${P.length ? `<section class="hc" style="--c:#2d5c99"><h3>${t('projets')}<button data-a="go" data-v="projets">${t('see_all')}</button></h3>${P.slice(0, 3).map(p => `<button class="it" data-a="go" data-v="projets"><div><b>${esc(p.t)}</b>${p.d ? `<small>${esc(p.d.slice(0, 140))}${p.d.length > 140 ? '…' : ''}</small>` : ''}</div></button>`).join('')}</section>` : ''}
+      ${lfDay.length ? `<section class="hc" style="--c:#a07a1e"><h3>${t('h_lfday')}<button data-a="go" data-v="lefebvre">${t('see_all')}</button></h3>${lfDay.map(e => `<button class="it" data-a="lfyear" data-v="${e.y}"><span class="yr">${e.y}</span><div><b>${esc(e.titre)}</b><small>${esc([(e.lieux || []).join(', '), e.pays].filter(Boolean).join(' · '))}${e.resume ? ' — ' + esc(e.resume.slice(0, 120)) + (e.resume.length > 120 ? '…' : '') : ''}</small></div></button>`).join('')}</section>` : ''}
+      ${F ? `<section class="hc" style="--c:#2f6b45"><h3>${esc(t('month_now', { m: mLab }))}<button data-a="tab" data-v="frais">${t('see_all')}</button></h3>${s && s.n ? `<div><b class="num">CHF ${chf(s.dep + s.kmc)}</b><small class="muted" style="display:block">${t('lines', { n: s.n })} · ${t('expenses')} ${chf(s.dep)} · ${s.km} km${s.don ? ' · ' + t('dons') + ' ' + chf(s.don) : ''}</small></div>` : `<small class="muted">${t('no_frais')}</small>`}</section>` : ''}
+      ${window.WIL_URL ? `<section class="list"><a class="row" href="${window.WIL_URL}" target="_blank" rel="noopener"><div class="m"><b>${t('go_wil')}</b><small>${t('go_wil_txt')}</small></div></a></section>` : ''}`;
+  }
+
+  function vContacts() {
+    if (!src('carnet')) return `<h1>${t('contacts')}</h1><div class="card"><b>${t('no_carnet')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const q = norm(ui.cq || ''), cat = ui.cc || '';
+    const cats = [...new Set(contacts().map(c => c.cat).filter(Boolean))].sort();
+    let C = contacts().filter(c => !cat || c.cat === cat);
+    if (q) C = C.filter(c => norm([cName(c), c.org, c.fonction, cAddr(c.adr), c.note, ...(c.tels || []).map(x => x.n), ...(c.mails || []).map(x => x.m)].join(' ')).includes(q));
+    C.sort((a, b) => (a.nom || a.org || '').localeCompare(b.nom || b.org || '', 'fr'));
+    const lim = +(ui.cLim || 150);
+    return `<h1>${t('contacts')} <span class="muted small">${C.length}</span></h1>
+      <input id="cq" type="search" placeholder="${esc(t('find_contact'))}" value="${esc(ui.cq || '')}" data-live="cq">
+      ${cats.length > 1 ? `<div class="tabs"><button data-a="ui" data-k="cc" data-val="" aria-pressed="${!cat}">${t('all_cats')}</button>${cats.map(c => `<button data-a="ui" data-k="cc" data-val="${esc(c)}" aria-pressed="${cat === c}">${esc(c)}</button>`).join('')}</div>` : ''}
+      <div class="list">${C.slice(0, lim).map(c => `<button class="row" data-a="go" data-v="contact" data-arg="${esc(c.id)}"><div class="m"><b>${esc(cName(c))}</b><small>${esc([c.org, c.fonction, c.adr?.ville].filter(Boolean).join(' · ') || (c.tels || [])[0]?.n || '')}</small></div></button>`).join('') || `<div class="empty">${t('nores')}</div>`}
+      ${C.length > lim ? `<button class="row" data-a="ui" data-k="cLim" data-val="${lim + 300}"><div class="m"><b>Afficher plus</b></div></button>` : ''}</div>`;
+  }
+  function vContact(id) {
+    const c = contacts().find(x => x.id === id); if (!c) return `<p class="empty">${t('nores')}</p>`;
+    const A = cAddr(c.adr);
+    return `<div><h1>${esc(cName(c))}</h1><div class="bar" style="margin-top:6px">${c.cat ? `<span class="chip">${esc(c.cat)}</span>` : ''}${noteBtn(cName(c), 'contacts')}</div></div>
+      <section class="card"><dl class="kv">
+        ${c.org ? `<dt>${t('org')}</dt><dd>${esc(c.org)}</dd>` : ''}${c.fonction ? `<dt>${t('fonction')}</dt><dd>${esc(c.fonction)}</dd>` : ''}
+        ${(c.tels || []).map(x => `<dt>${esc(x.type || t('phone'))}</dt><dd>${line(x.n, 'tel')}</dd>`).join('')}
+        ${(c.mails || []).map(x => `<dt>${esc(x.type || t('email'))}</dt><dd>${line(x.m, 'mailto')}</dd>`).join('')}
+        ${A ? `<dt>${t('address')}</dt><dd>${esc(A)} <a class="btn sm" href="${mapUrl(c.adr)}" target="_blank" rel="noopener">${t('open_in_maps')}</a></dd>` : ''}
+      </dl>${c.note ? `<div class="txt small">${esc(c.note)}</div>` : ''}</section>`;
+  }
+
+  /* (2026-11-19) Frais : « Noter un frais » (dépense ou trajet) -> note toute prête pour l'ordinateur ; les trajets affichent leur montant (km × taux) */
+  const kmAmt = (l, taux) => (+l.km || 0) * (taux || 0);
+  const lineAmt = (l, taux) => (+l.montant || 0) + (+l.montant ? 0 : kmAmt(l, taux));
+  function frPending(F) {
+    const done = new Set(); if (F) for (const x of F.mois || []) for (const l of x.lignes || []) if (l.nid) done.add(l.nid);
+    const lim = new Date(Date.now() - 75 * 864e5).toISOString();
+    return M.st.notes.filter(n => n.ref && n.ref.k === 'frais' && !n.done && !done.has(n.id) && (n.d || '') > lim);
+  }
+  function frQuick(F) {
+    const taux = F ? F.taux : 0, d0 = today(), L2 = 'display:flex;flex-direction:column;gap:4px;font-size:14px';
+    const libs = new Map(), lieux = new Map();
+    if (F) for (const x of F.mois || []) for (const l of x.lignes || []) { if (!l.lib) continue; if (+l.km && !+l.montant) { if (l.a) lieux.set(l.a, 1); if (l.de) lieux.set(l.de, 1) } else if (!+l.don) libs.set(l.lib, 1) }
+    if (F) { for (const k of Object.keys(F.lieux || {})) lieux.set(k, 1); for (const k of Object.keys(F.trajets || {})) k.split('|').forEach(x => x && !lieux.has(x) && ![...lieux.keys()].some(y => y.toLowerCase() === x) && lieux.set(x, 1)) }
+    const dl = (id, M0) => `<datalist id="${id}">${[...M0.keys()].sort((a, b) => a.localeCompare(b, 'fr')).map(x => `<option value="${esc(x)}">`).join('')}</datalist>`;
+    window.__frF = F; window.__frTaux = taux;
+    return `<section class="card"><h3>${t('fr_quick')}</h3>
+      <div class="bar"><button class="btn ${ui.fq === 'dep' ? 'pri' : ''}" data-a="ui" data-k="fq" data-val="${ui.fq === 'dep' ? '' : 'dep'}">${t('fr_q_dep')}</button><button class="btn ${ui.fq === 'km' ? 'pri' : ''}" data-a="ui" data-k="fq" data-val="${ui.fq === 'km' ? '' : 'km'}">${t('fr_q_km')}</button></div>
+      ${ui.fq === 'dep' ? `<label style="${L2}">${t('fr_q_date')}<input id="fqd" type="date" value="${d0}"></label>
+        <label style="${L2}">${t('fr_q_lib')}<input id="fql" type="text" list="frlibs" autocomplete="off"></label>${dl('frlibs', libs)}
+        <label style="${L2}">${t('fr_q_mont')}<input id="fqm" type="text" inputmode="decimal"></label>
+        <label style="${L2}">${t('fr_q_rem')}<input id="fqr" type="text"></label>
+        <button class="btn pri" data-a="fqsend">${t('fr_q_send')}</button>` : ''}
+      ${ui.fq === 'km' ? `<label style="${L2}">${t('fr_q_date')}<input id="fqd" type="date" value="${d0}"></label>
+        <div class="bar" style="flex-wrap:nowrap"><label style="${L2};flex:1">${t('fr_q_de')}<input id="fqde" type="text" list="frlieux" autocomplete="off" value="${esc((F && F.depart) || 'Wil SG')}"></label><label style="${L2};flex:1">${t('fr_q_a')}<input id="fqa" type="text" list="frlieux" autocomplete="off"></label></div>${dl('frlieux', lieux)}
+        <label style="display:flex;gap:8px;align-items:center;font-size:15px"><input id="fqar" type="checkbox" style="width:22px;height:22px" ${F && F.ar === false ? '' : 'checked'}> ${t('fr_q_ar')}</label>
+        <small id="fqknown" class="muted"></small>
+        <label style="${L2}">${t('fr_q_km_n')}<input id="fqk" type="text" inputmode="decimal"></label>
+        <b id="fqc" class="num"></b>
+        <label style="${L2}">${t('fr_q_rem')}<input id="fqr" type="text"></label>
+        <button class="btn pri" data-a="fqsend">${t('fr_q_send')}</button>` : ''}
+      <span class="small muted">${t('fr_q_txt')}</span></section>`;
+  }
+  function frCalc() {
+    const n = x => parseFloat(String(x || '').replace(',', '.')) || 0, k = document.getElementById('fqk'), c = document.getElementById('fqc'); if (!k || !c) return;
+    const km = n(k.value);
+    c.textContent = km ? km + ' km ' + t('fr_q_calc', { c: chf(km * (window.__frTaux || 0)), r: window.__frTaux || 0 }) : '';
+  }
+  function frKnown() { /* mêmes trajets que l'ordinateur (data.trajets : « de|à » -> km aller simple) */
+    const F = window.__frF, de = (document.getElementById('fqde')?.value || '').trim().toLowerCase(), a = (document.getElementById('fqa')?.value || '').trim().toLowerCase(), kn = document.getElementById('fqknown'), f = document.getElementById('fqk');
+    if (!de || !a || !F) { if (kn) kn.textContent = ''; return }
+    const T = F.trajets || {}, k = T[de + '|' + a] || T[a + '|' + de];
+    if (k) { if (kn) kn.textContent = t('fr_q_known', { k }); if (f) f.value = k * (document.getElementById('fqar')?.checked ? 2 : 1) } else if (kn) kn.textContent = t('fr_q_unknown');
+    frCalc();
+  }
+  document.addEventListener('input', e => { const id = e.target && e.target.id;
+    if (id === 'fqde' || id === 'fqa') frKnown(); else if (id === 'fqk') frCalc() });
+  document.addEventListener('change', e => { if (e.target && e.target.id === 'fqar') { const F = window.__frF, de = (document.getElementById('fqde')?.value || '').trim().toLowerCase(), a = (document.getElementById('fqa')?.value || '').trim().toLowerCase(), T = (F && F.trajets) || {}; if (T[de + '|' + a] || T[a + '|' + de]) frKnown(); else frCalc() } });
+  async function frSend() {
+    const v = k => (document.getElementById(k)?.value || '').trim(), n = x => parseFloat(String(x || '').replace(',', '.')) || 0;
+    const F = src('frais'), taux = F ? F.taux : 0, d = v('fqd') || today(), rem = v('fqr');
+    let txt, ref;
+    if (ui.fq === 'km') { const de = v('fqde'), a = v('fqa'), ar = !!document.getElementById('fqar')?.checked, km = Math.round(n(v('fqk'))); if (!a || !km) { M.toast(t('fr_q_empty')); return }
+      const lib = ('Trajet ' + de + ' – ' + a + (ar ? ' (aller-retour)' : '')).replace(/ – $/, '');
+      txt = 'Trajet du ' + fmtD(d) + ' : ' + de + ' – ' + a + (ar ? ' (aller-retour)' : '') + ' – ' + km + ' km' + (taux ? ' = CHF ' + chf(km * taux) : '') + (rem ? ' (' + rem + ')' : '');
+      ref = { label: lib, k: 'frais', type: 'km', date: d, lib, de, a, km, ar, montant: 0, taux, rem } }
+    else { const lib = v('fql'), mt = n(v('fqm')); if (!lib || !mt) { M.toast(t('fr_q_empty')); return }
+      txt = 'Dépense du ' + fmtD(d) + ' : ' + lib + ' – CHF ' + chf(mt) + (rem ? ' (' + rem + ')' : '');
+      ref = { label: lib, k: 'frais', type: 'dep', date: d, lib, montant: mt, km: 0, rem } }
+    await M.addNote(txt, 'frais', ref); ui.fq = ''; ui.fm = String(+d.slice(5, 7)); await M.save(); render(); M.toast(t('fr_q_done')); M.pushNotes().then(() => render()).catch(() => { });
+  }
+  async function frUndo(el) {
+    const st = M.st, n = st.notes.find(z => z.id === el.dataset.id); if (!n) return;
+    if (n.sent) { M.toast(t('fr_undo_sent')); return }
+    st.notes = st.notes.filter(z => z.id !== n.id); await M.save(); render();
+  }
+  function vFrais() {
+    const F = src('frais'), P = frPending(F);
+    const pend = P.length ? `<section class="card"><h3>${t('fr_pend')} (${P.length})</h3><div class="list">${P.slice().sort((a, b) => (a.ref.date || '').localeCompare(b.ref.date || '')).map(n => { const r = n.ref, a = r.type === 'km' ? (r.km || 0) * ((F && F.taux) || r.taux || 0) : (+r.montant || 0);
+      return `<div class="row"><div class="date"><b>${+(r.date || '').slice(8, 10) || ''}</b><span>${esc(M.wd(r.date || today()))}</span></div><div class="m"><b>${r.type === 'km' ? '🚗 ' : ''}${esc(r.lib || '–')}</b>${r.type === 'km' ? `<small>${r.km} km</small>` : ''}${r.rem ? `<small>${esc(r.rem)}</small>` : ''}<div class="bar" style="margin-top:4px"><span class="chip ${n.sent ? 'ok' : 'amber'}">${n.sent ? t('fr_pend_sent') : t('fr_pend_wait')}</span>${n.sent ? '' : `<button class="btn sm" data-a="frundo" data-id="${esc(n.id)}">${t('fr_undo')}</button>`}</div></div><div class="s num"><b>${chf(a)}</b></div></div>` }).join('')}</div></section>` : '';
+    if (!F) return `<h1>${t('frais')}</h1>${frQuick(null)}${pend}<div class="card"><b>${t('no_frais')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const cur = +(ui.fm || today().slice(5, 7)); const m = F.mois.find(x => x.m === cur) || { lignes: [] }; const s = monthSum(m, F.taux);
+    const yearTot = F.mois.reduce((a, x) => { const r = monthSum(x, F.taux); return a + r.dep + r.kmc }, 0);
+    const pm = P.filter(n => +(n.ref.date || '').slice(5, 7) === cur).reduce((a, n) => a + (n.ref.type === 'km' ? (n.ref.km || 0) * F.taux : (+n.ref.montant || 0)), 0);
+    return `<h1>${t('frais')} <span class="muted small">${t('year', { y: F.annee })}</span></h1>
+      ${frQuick(F)}${pend}
+      <select id="fmsel" data-ui="fm">${F.mois.map(x => { const r = monthSum(x, F.taux); return `<option value="${x.m}" ${x.m === cur ? 'selected' : ''}>${MONTHS[x.m - 1]} — CHF ${chf(r.dep + r.kmc)}</option>` }).join('')}</select>
+      <section class="card"><dl class="kv num"><dt>${t('expenses')}</dt><dd>CHF ${chf(s.dep)}</dd><dt>${t('km')}</dt><dd>${s.km} km (${t('rate', { r: F.taux })})</dd><dt>${t('km_cost')}</dt><dd>CHF ${chf(s.kmc)}</dd>${s.don ? `<dt>${t('dons')}</dt><dd>CHF ${chf(s.don)}</dd>` : ''}<dt><b>${t('total')}</b></dt><dd><b>CHF ${chf(s.dep + s.kmc)}</b></dd></dl>
+        <span class="small muted">${esc(t('year', { y: F.annee }))} : CHF ${chf(yearTot)}${pm ? ' · ' + t('fr_pend_tot', { c: chf(pm) }) : ''}</span></section>
+      <div class="list">${(m.lignes || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(l => { const km = +l.km || 0, isKm = km && !+l.montant;
+        return `<div class="row"><div class="date"><b>${+(l.date || '').slice(8, 10) || ''}</b><span>${esc(M.wd(l.date || today()))}</span></div><div class="m"><b>${isKm ? '🚗 ' : ''}${esc(l.lib || '–')}</b>${km ? `<small>${t('fr_km_line', { k: km, r: F.taux })}${+l.montant ? ' = CHF ' + chf(kmAmt(l, F.taux)) : ''}</small>` : ''}${l.don ? `<small>${t('dons')} ${chf(l.don)}</small>` : ''}</div><div class="s num"><b>${chf(lineAmt(l, F.taux))}</b></div></div>` }).join('') || `<div class="empty">—</div>`}</div>
+      <div>${noteBtn('Frais ' + MONTHS[cur - 1], 'frais')}</div>`;
+  }
+
+  function vIntentions() {
+    const I = src('intentions'); if (!I) return `<h1>${t('intentions')}</h1><div class="card"><b>${t('no_int')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const A = (I.intentions || []).filter(x => x.statut === 'a'), lab = x => (x.defunt ? '† ' : '') + x.intention;
+    /* (2026-11-17) date prévue : demandée, ou proposée par l'ordinateur ; ⛪ messe du Zelebrationsplan ; dimanche en gris ; « Dite » prépare une note pour l'ordinateur */
+    const pl = x => x.mode === 'date' && x.date ? x.date : (x.plan || '');
+    const D = A.filter(x => x.mode === 'date' && x.date).sort((a, b) => (a.date + (a.heure || '')).localeCompare(b.date + (b.heure || '')));
+    const Q = A.filter(x => !(x.mode === 'date' && x.date)).sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    const add = (s, n) => { const [y, m, d] = s.split('-').map(Number); const x = new Date(y, m - 1, d + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0') };
+    const d0 = today(), MS = I.messes || {}, st = M.st, N = st.intN || (st.intN = {});
+    for (const k of Object.keys(N)) { const x = A.find(y => y.id === k); if (!x || (N[k].a === 'non' && pl(x) !== N[k].d)) delete N[k] }
+    const mass = d => (MS[d] || []).map(y => `<small style="display:block;color:#1d5f8a;font-weight:600">⛪ ${esc(y.h)} ${esc(String(y.lib || '').replace(/^Hl\. Messe – /, ''))}${y.note ? ' · ' + esc(y.note) : ''}</small>`).join('');
+    const item = (x, d) => { const n = N[x.id];
+      return `<div style="margin:3px 0"><b>${x.mode === 'date' && x.date ? '📅 ' : ''}${esc(lab(x))}</b>${x.mode !== 'date' ? ` <small class="muted">${t('int_prop')}</small>` : ''}${x.donateur ? `<small class="muted" style="display:block">${esc(x.donateur)}</small>` : ''}
+        ${n ? `<div class="bar" style="margin-top:4px"><span class="chip ok">${n.a === 'dite' ? t('int_noted_ok') : t('int_noted_no')}</span><button class="btn sm" data-a="intundo" data-id="${esc(x.id)}">${t('int_undo')}</button></div>`
+          : d <= d0 ? `<div class="bar" style="margin-top:4px"><button class="btn sm pri" data-a="intok" data-id="${esc(x.id)}" data-d="${d}">${t('int_ok')}</button><button class="btn sm" data-a="intno" data-id="${esc(x.id)}" data-d="${d}">${t('int_no')}</button></div>` : ''}</div>` };
+    const dayRow = d => { const [y, m, dd] = d.split('-').map(Number), sun = new Date(y, m - 1, dd).getDay() === 0, L = A.filter(x => pl(x) === d);
+      return `<div class="row"${sun ? ' style="opacity:.5;background:rgba(127,127,127,.12)"' : ''}><div class="date"><b>${dd}</b><span>${esc(M.wd(d))}</span></div><div class="m">${mass(d)}${L.length ? L.map(x => item(x, d)).join('') : `<small class="muted">${sun ? t('int_sun') : t('int_free')}</small>`}</div></div>` };
+    const late = [...new Set(A.map(pl).filter(d => d && d < d0))].sort();
+    let days = ''; for (let i = 0; i < 14; i++) days += dayRow(add(d0, i));
+    const row = x => `<div class="row"><div class="m"><b>${esc(lab(x))}</b><small>${[pl(x) ? fmtD(pl(x)) + (x.mode === 'date' ? '' : ' (' + t('int_prop') + ')') : '', x.donateur ? esc(x.donateur) : '', x.honoraire !== '' && x.honoraire != null ? 'CHF ' + chf(x.honoraire) : ''].filter(Boolean).join(' · ')}</small>${x.note ? `<small class="txt">${esc(x.note)}</small>` : ''}</div></div>`;
+    const sorted = A.slice().sort((a, b) => (pl(a) || '9999').localeCompare(pl(b) || '9999') || (a.ordre || 0) - (b.ordre || 0));
+    const L2 = 'display:flex;flex-direction:column;gap:4px;font-size:14px';
+    const quick = `<section class="card"><h3>${t('int_quick')}</h3>
+      <div class="bar"><button class="btn ${ui.iq === 'dite' ? 'pri' : ''}" data-a="ui" data-k="iq" data-val="${ui.iq === 'dite' ? '' : 'dite'}">${t('int_q_dite')}</button><button class="btn ${ui.iq === 'new' ? 'pri' : ''}" data-a="ui" data-k="iq" data-val="${ui.iq === 'new' ? '' : 'new'}">${t('int_q_new')}</button></div>
+      ${ui.iq === 'dite' ? `<label style="${L2}">${t('int_q_which')}<select id="iqsel">${sorted.map(x => `<option value="${esc(x.id)}">${pl(x) ? esc(fmtD(pl(x))) + ' – ' : ''}${esc(lab(x))}</option>`).join('')}<option value="">${t('int_q_other')}</option></select></label>
+        <label style="${L2}">${t('int_q_othertxt')}<input id="iqother" type="text"></label>
+        <label style="${L2}">${t('int_q_date')}<input id="iqd" type="date" value="${d0}" max="${d0}"></label>
+        <button class="btn pri" data-a="iqdite">${t('int_q_send')}</button>` : ''}
+      ${ui.iq === 'new' ? `<label style="${L2}">${t('int_q_int')}<input id="iqt" type="text"></label>
+        <label style="display:flex;gap:8px;align-items:center;font-size:15px"><input id="iqdef" type="checkbox" style="width:22px;height:22px"> ${t('int_q_def')}</label>
+        <label style="${L2}">${t('int_q_don')}<input id="iqdon" type="text"></label>
+        <div class="bar" style="flex-wrap:nowrap"><label style="${L2};flex:1">${t('int_q_hon')}<input id="iqhon" type="text" inputmode="decimal" value="${esc(I.reglages && I.reglages.honoraire != null ? I.reglages.honoraire : 20)}"></label><label style="${L2};flex:1">${t('int_q_nb')}<input id="iqnb" type="text" inputmode="numeric" value="1"></label></div>
+        <label style="${L2}">${t('int_q_dd')}<input id="iqdd" type="date"></label>
+        <label style="${L2}">${t('int_q_rem')}<input id="iqrem" type="text"></label>
+        <button class="btn pri" data-a="iqnew">${t('int_q_send')}</button>` : ''}
+      <span class="small muted">${t('int_q_txt')}</span></section>`;
+    return `<h1>${t('intentions')} <span class="muted small">${t('int_todo', { n: A.length })}</span></h1>
+      ${quick}
+      ${late.length ? `<section class="card"><h3>${t('int_late')}</h3><div class="list">${late.map(dayRow).join('')}</div></section>` : ''}
+      <section class="card"><h3>${t('int_next')}</h3><div class="list">${days}</div></section>
+      <section class="card"><h3>${t('int_dt')} (${D.length})</h3><div class="list">${D.map(row).join('') || `<div class="empty">—</div>`}</div></section>
+      <section class="card"><h3>${t('int_q')} (${Q.length})</h3><div class="list">${Q.map(row).join('') || `<div class="empty">—</div>`}</div></section>
+      <p class="small muted">${t('int_ro2')}</p><div>${noteBtn('Intentions de messe', 'intentions')}</div>`;
+  }
+  /* (2026-11-17) « Dite » / « Pas dite » : une note toute prête part vers l'ordinateur ; là-bas, un clic la valide */
+  async function intNote(el, a) {
+    const I = src('intentions'), x = (I && I.intentions || []).find(y => y.id === el.dataset.id); if (!x) return;
+    const d = el.dataset.d, lab = (x.defunt ? '† ' : '') + x.intention, st = M.st;
+    const txt = (a === 'dite' ? 'Messe célébrée le ' : 'Messe PAS célébrée le ') + fmtD(d) + ' : ' + lab + (a === 'dite' ? '' : ' – à décaler');
+    await M.addNote(txt, 'intentions', { label: lab, k: 'int', a, id: x.id, d });
+    st.intN = st.intN || {}; st.intN[x.id] = { a, d, n: st.notes[0] && st.notes[0].id }; await M.save(); render(); M.toast(t('int_noted')); M.pushNotes().then(() => render()).catch(() => { });
+  }
+  /* (2026-11-17) « Noter vite » : messe dite (dans la liste ou hors liste) ou intention reçue -> note toute prête pour l'ordinateur */
+  async function iqDite() {
+    const I = src('intentions'), id = document.getElementById('iqsel')?.value || '', d = document.getElementById('iqd')?.value || today(), st = M.st;
+    if (id) { const x = (I.intentions || []).find(y => y.id === id); if (!x) return; const lab = (x.defunt ? '† ' : '') + x.intention;
+      await M.addNote('Messe célébrée le ' + fmtD(d) + ' : ' + lab, 'intentions', { label: lab, k: 'int', a: 'dite', id: x.id, d });
+      st.intN = st.intN || {}; st.intN[x.id] = { a: 'dite', d, n: st.notes[0] && st.notes[0].id } }
+    else { const tx = (document.getElementById('iqother')?.value || '').trim(); if (!tx) { M.toast(t('int_q_empty')); return }
+      await M.addNote('Messe célébrée le ' + fmtD(d) + ' (hors liste) : ' + tx, 'intentions', { label: tx, k: 'int', a: 'autre', d }) }
+    ui.iq = ''; await M.save(); render(); M.toast(t('int_q_done')); M.pushNotes().then(() => render()).catch(() => { });
+  }
+  async function iqNew() {
+    const v = k => (document.getElementById(k)?.value || '').trim(), it = v('iqt'); if (!it) { M.toast(t('int_q_empty')); return }
+    const def = !!document.getElementById('iqdef')?.checked, don = v('iqdon'), hon = v('iqhon').replace(',', '.'), nb = Math.max(1, Math.min(60, parseInt(v('iqnb'), 10) || 1)), dd = v('iqdd'), rem = v('iqrem');
+    const lab = (def ? '† ' : '') + it;
+    const txt = 'Nouvelle intention reçue : ' + lab + (don ? ' – donateur : ' + don : '') + (nb > 1 ? ' – ' + nb + ' messes' : '') + (hon ? ' – CHF ' + hon : '') + (dd ? ' – le ' + fmtD(dd) : ' – à la suite') + (rem ? ' (' + rem + ')' : '');
+    await M.addNote(txt, 'intentions', { label: lab, k: 'intnew', intention: it, defunt: def, donateur: don, honoraire: hon === '' ? '' : +hon, nombre: nb, date: dd, note: rem });
+    ui.iq = ''; await M.save(); render(); M.toast(t('int_q_done')); M.pushNotes().then(() => render()).catch(() => { });
+  }
+  async function intUndo(el) {
+    const st = M.st, k = el.dataset.id, m = st.intN && st.intN[k]; if (!m) return;
+    const n = st.notes.find(z => z.id === m.n);
+    if (n && n.sent) M.toast(t('int_undo_sent')); else st.notes = st.notes.filter(z => z.id !== m.n);
+    delete st.intN[k]; await M.save(); render();
+  }
+
+  function vProjets() {
+    const P = src('projets') || [];
+    return `<h1>${t('projets')}</h1><div class="list">${P.map(p => `<div class="row"><div class="m"><b>${esc(p.t)}</b>${p.d ? `<small class="txt">${esc(p.d)}</small>` : ''}${p.depuis ? `<small>${t('since', { d: fmtD(p.depuis) })}</small>` : ''}</div><div class="s"><span class="chip ${p.fait ? 'ok' : ''}">${p.fait ? t('finished') : t('in_progress')}</span>${noteBtn(p.t, 'projets')}</div></div>`).join('') || `<div class="empty">—</div>`}</div>`;
+  }
+
+  /* ---------- liens vers SharePoint / OneDrive ---------- */
+  /* adresses réelles des bibliothèques (d'après la synchronisation OneDrive de l'ordinateur) */
+  const LIB = { 'PTF - Documents': ['PTF', 'Documents partages'], 'WIL - Wil': ['Wil', 'Wil'], 'Webmaster CH - Documents': ['WebmasterCH', 'Documents partages'], 'PHOTOS - Photos': ['CH-Photos', 'Photos_Maisons'], 'CH-Assistant - 00_CAUSES EN COURS': ['CH-Assistant', 'Documents partages/00_CAUSES EN COURS'] };
+  function spUrl(p, dir) {
+    const a = p.split('/');
+    if (a[0] === 'FSSPX' && LIB[a[1]]) { const [site, lib] = LIB[a[1]]; const rest = [lib, ...a.slice(2)];
+      if (dir) return `https://fsspx.sharepoint.com/sites/${site}/${encodeURIComponent(lib.split('/')[0])}/Forms/AllItems.aspx?id=${encodeURIComponent('/sites/' + site + '/' + rest.join('/'))}`;
+      return `https://fsspx.sharepoint.com/sites/${site}/` + rest.join('/').split('/').map(encodeURIComponent).join('/') + '?web=1' }
+    /* OneDrive personnel : le fichier lui-même (même compte que l'application OneDrive) ; sans l'identifiant du compte, recherche du nom */
+    if (a[0] === 'OneDrive') { const cid = src('config')?.odcid; return cid ? 'https://d.docs.live.net/' + cid + '/' + a.slice(1).map(encodeURIComponent).join('/') : 'https://onedrive.live.com/?qt=search&q=' + encodeURIComponent(a[a.length - 1]) }
+    return null;
+  }
+  const ago = iso => { if (!iso) return ''; const n = M.diffDays(iso.slice(0, 10), today()); return n <= 0 ? t('today_s') : t('days_ago', { n }) };
+
+  /* ---------- Mgr Lefebvre ---------- */
+  let LF = null;
+  const yr = s => { const A = [...String(s || '').matchAll(/(?:^|[^0-9])(1[89][0-9][0-9]|20[0-2][0-9])(?![0-9])/g)].map(m => +m[1]); return A.find(y => y >= 1905 && y <= 1991) || A[0] || null };
+  function lfBuild() {
+    if (LF) return LF;
+    const meta = src('lf_photos')?.f || {}, fi = src('lf_fiches') || {}, ft = src('lf_ftextes') || {}, li = src('lf_liens')?.groupes || [], docs = src('lf_docs')?.docs || [];
+    const hide = new Set(); li.forEach(g => (g || []).slice(1).forEach(p => hide.add(p)));
+    const photos = [], seen = new Set();
+    const add = (p, m) => {
+      if (seen.has(p) || hide.has(p) || !/\.(jpe?g|png|tiff?|gif|webp|heic)$/i.test(p)) return; seen.add(p);
+      m = m || {}; const f = fi[p] || {}, kw = (m.kw || []).filter(k => k !== 'Annee').join(', ');
+      const title = m.ti || f.evenement || p.split('/').pop().replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ');
+      const y = yr(f.date) || yr(m.ti) || yr(kw) || yr(p);
+      photos.push({ p, title, y, lieu: f.lieu || '', date: f.date || '', kw, rem: f.remarques || '', q: norm([title, f.lieu, f.date, f.evenement, kw, p].join(' ')) });
+    };
+    for (const [p, v] of Object.entries(meta)) add(p, v && v[2]);
+    for (const p of Object.keys(fi)) add(p, null);
+    photos.sort((a, b) => (a.y || 9999) - (b.y || 9999) || a.p.localeCompare(b.p));
+    const D = docs.map(d => { const f = ft[d.p] || {}; return Object.assign({}, d, { f, y: d.a || yr(f.date), q: norm([d.t, f.resume, f.genre, f.lieu, f.occasion, f.auteur, d.p].join(' ')) }) }).sort((a, b) => (a.y || 9999) - (b.y || 9999) || (a.t || '').localeCompare(b.t || ''));
+    return (LF = { photos, docs: D });
+  }
+  const MOISN = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  const DRAPN = { 'Suisse': 'CH', 'France': 'FR', 'Italie': 'IT', 'Vatican': 'VA', 'Sénégal': 'SN', 'États-Unis': 'US', 'Etats-Unis': 'US', 'Allemagne': 'DE', 'Autriche': 'AT', 'Belgique': 'BE', 'Pays-Bas': 'NL', 'Espagne': 'ES', 'Portugal': 'PT', 'Irlande': 'IE', 'Angleterre': 'GB', 'Royaume-Uni': 'GB', 'Grande-Bretagne': 'GB', 'Écosse': 'GB', 'Gabon': 'GA', 'Cameroun': 'CM', 'Madagascar': 'MG', 'Sierra Leone': 'SL', 'Kenya': 'KE', 'Afrique du Sud': 'ZA', 'Nigeria': 'NG', 'Togo': 'TG', "Côte d'Ivoire": 'CI', 'Mali': 'ML', 'Guinée': 'GN', 'Congo': 'CG', 'Argentine': 'AR', 'Brésil': 'BR', 'Chili': 'CL', 'Colombie': 'CO', 'Mexique': 'MX', 'Pérou': 'PE', 'Équateur': 'EC', 'Canada': 'CA', 'Australie': 'AU', 'Nouvelle-Zélande': 'NZ', 'Inde': 'IN', 'Philippines': 'PH', 'Japon': 'JP', 'Gabon ': 'GA', 'Haute-Volta': 'BF', 'Burkina Faso': 'BF', 'Tchad': 'TD', 'Mauritanie': 'MR', 'Guinée-Bissau': 'GW', 'Cap-Vert': 'CV', 'Gambie': 'GM', 'Liechtenstein': 'LI', 'Luxembourg': 'LU', 'Pologne': 'PL', 'Hongrie': 'HU', 'Uruguay': 'UY', 'Paraguay': 'PY', 'Venezuela': 'VE', 'Bolivie': 'BO', 'Zimbabwe': 'ZW', 'Rhodésie': 'ZW', 'Djibouti': 'DJ', 'Maroc': 'MA', 'Tunisie': 'TN', 'Algérie': 'DZ', 'Égypte': 'EG', 'Israël': 'IL', 'Liban': 'LB', 'Terre sainte': 'IL', 'Suède': 'SE', 'Danemark': 'DK', 'Norvège': 'NO', 'Malte': 'MT', 'Monaco': 'MC', 'Réunion': 'RE', 'Maurice': 'MU', 'Seychelles': 'SC' };
+  const drap = p => { const c = DRAPN[p]; return c ? String.fromCodePoint(...[...c].map(x => 0x1F1E6 + x.charCodeAt(0) - 65)) : '' };
+  const dC = d => { const p = String(d || '').split('-'); if (!p[0]) return ''; if (p[2]) return +p[2] + ' ' + MOISN[+p[1] - 1]; if (p[1]) return MOISN[+p[1] - 1]; return '' };
+  function lfCarnet() {
+    const C = src('lf_carnet'); if (!C) return null;
+    const S = C.sources || {};
+    return (C.entrees || []).map(e => { const y = +String(e.debut || '').slice(0, 4) || null, y2 = +String(e.fin || '').slice(0, 4) || y;
+      return Object.assign({}, e, { y, y2, q: norm([e.titre, e.resume, (e.lieux || []).join(' '), e.pays, e.type].join(' ')), srcT: e.src === 'web' ? t('lf_src_web') : ((S[e.src] && S[e.src].titre || '').split(',')[0].replace(/^Bernard /, '') + (e.page ? ', p. ' + e.page : '')) }) })
+      .filter(e => e.y).sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
+  }
+  if (!document.getElementById('lf-css')) { const st = document.createElement('style'); st.id = 'lf-css'; st.textContent = `
+    .lfy{display:flex;align-items:center;gap:8px;margin:10px 0 4px}.lfy select{flex:1;margin:0}.lfy button{flex:none;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:700 20px var(--body);cursor:pointer}.lfy button:disabled{opacity:.35}
+    .lfh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:16px 2px 6px}.lfh h3{margin:0;font:700 22px var(--head,Spectral,serif);color:var(--accent)}.lfh span{font-size:13px;color:var(--muted)}.lfh .fl{font-size:17px;letter-spacing:2px}
+    .lfv{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:start}.lfv .d{font:700 13px var(--body);color:var(--accent);padding-top:2px;line-height:1.25}.lfv .d small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+    .lfv b{display:block}.lfv .w{font-size:13px;color:var(--muted);margin-top:1px}.lfv .r{font-size:14px;line-height:1.45;margin-top:4px}.lfv .s{font-size:12px;color:var(--muted);margin-top:4px}.lfv .s a{color:var(--accent)}
+    .lfalso{font-size:13px;color:var(--muted);margin:2px 2px 8px}.lfalso b{color:var(--ink)}` ; document.head.appendChild(st) }
+  function vLefebvre() {
+    const CV = lfCarnet();
+    if (!src('lf_photos') && !src('lf_docs') && !CV) return `<h1>${t('lefebvre')}</h1><div class="card"><b>${t('lf_none')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const L = lfBuild(), tab = ui.lt || (CV ? 'voyages' : 'photos'), q = norm(ui.lq || ''), lim = +(ui.lLim || 150);
+    const list = tab === 'voyages' ? (CV || []) : tab === 'photos' ? L.photos : L.docs;
+    const years = [...new Set(list.map(x => x.y ? String(x.y) : '?'))].sort();
+    let yr = ui.ly == null ? (tab === 'voyages' && years.length ? years.find(y => y !== '?') || '' : '') : ui.ly; if (yr && !years.includes(yr)) yr = '';
+    const R = list.filter(x => (!q || x.q.includes(q)) && (!yr || (yr === '?' ? !x.y : String(x.y) === yr)));
+    const i = years.indexOf(yr), prev = yr ? years[i - 1] : null, next = yr ? years[i + 1] : years[0];
+    const sel = `<div class="lfy"><button data-a="ui" data-k="ly" data-val="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="${t('lf_prev')}">‹</button><select data-ui="ly"><option value="">${t('lf_all_years')}</option>${years.map(y => `<option value="${y}" ${y === yr ? 'selected' : ''}>${y === '?' ? t('lf_no_year') : y}</option>`).join('')}</select><button data-a="ui" data-k="ly" data-val="${next || ''}" ${next ? '' : 'disabled'} aria-label="${t('lf_next')}">›</button></div>`;
+    let out = '', cur = null;
+    if (tab === 'voyages') {
+      const G = {}; for (const e of R.slice(0, yr ? 9999 : lim)) (G[e.y] = G[e.y] || []).push(e);
+      for (const y of Object.keys(G).sort()) {
+        const E = G[y], pays = [...new Set(E.map(e => e.pays).filter(Boolean))];
+        const span = (CV || []).filter(e => e.y < +y && e.y2 >= +y);
+        out += `<div class="lfh"><h3>${esc(y)}</h3><span>${t('lf_year_n', { n: E.length })}</span><span class="fl" title="${esc(pays.join(', '))}">${pays.map(drap).join('')}</span></div>`;
+        if (span.length) out += `<p class="lfalso"><b>${t('lf_also')} :</b> ${esc(span.map(e => e.titre + ' (' + e.y + '–' + e.y2 + ')').join(' · '))}</p>`;
+        out += `<div class="list">${E.map(e => { const d1 = dC(e.debut), d2 = e.fin && e.fin !== e.debut ? (String(e.fin).slice(0, 4) === String(e.debut).slice(0, 4) ? dC(e.fin) : String(e.fin).slice(0, 4)) : '';
+          return `<div class="row"><div class="lfv"><div class="d">${esc(d1 || e.y)}${d2 ? `<small>→ ${esc(d2)}</small>` : ''}</div><div><b>${esc(e.titre)}</b><div class="w">${drap(e.pays)} ${esc([(e.lieux || []).join(', '), e.pays].filter(Boolean).join(' · '))}${e.type ? ` · <span class="chip">${esc(e.type)}</span>` : ''}</div>${e.resume ? `<div class="r">${esc(e.resume)}</div>` : ''}<div class="s">${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.srcT)} ↗</a>` : esc(e.srcT)}</div></div></div></div>` }).join('')}</div>`;
+      }
+    } else {
+      for (const x of R.slice(0, lim)) {
+        const yh = x.y || t('lf_no_year'); if (yh !== cur) { if (cur !== null) out += '</div></section>'; cur = yh; out += `<section class="sec"><h3>${esc(yh)}</h3><div class="list">` }
+        const url = spUrl(x.p, false);
+        if (tab === 'photos') out += `<a class="row" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : ''}><div class="m"><b>${esc(x.title)}</b><small>${esc([x.date || x.y, x.lieu].filter(Boolean).join(' · '))}</small>${x.kw ? `<small>${esc(x.kw)}</small>` : ''}${x.rem ? `<small>${esc(x.rem)}</small>` : ''}</div><div class="s">${ICON.link}</div></a>`;
+        else out += `<a class="row" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : ''}><div class="m"><b>${esc(x.t)}</b><small>${esc([x.f.genre, x.f.lieu, x.f.occasion, x.n ? t('pages', { n: x.n }) : '', (x.k || '').toUpperCase()].filter(Boolean).join(' · '))}</small>${x.f.resume ? `<small class="txt">${esc(x.f.resume.slice(0, 260))}${x.f.resume.length > 260 ? '…' : ''}</small>` : ''}</div><div class="s">${ICON.link}</div></a>`;
+      }
+      if (cur !== null) out += '</div></section>';
+    }
+    const T3 = [CV ? 'voyages' : null, 'photos', 'docs'].filter(Boolean);
+    return `<h1>${t('lefebvre')}</h1><p class="small muted" style="margin:0">${CV ? CV.length + ' étapes · ' : ''}${t('lf_count', { p: L.photos.length, d: L.docs.length })}</p>
+      <div class="tabs">${T3.map(k => `<button data-a="ui" data-k="lt" data-val="${k}" aria-pressed="${tab === k}">${t(k === 'voyages' ? 'lf_voy' : k === 'photos' ? 'lf_photos' : 'lf_docs')}</button>`).join('')}</div>
+      <input id="lq" type="search" placeholder="${esc(t('search'))}" value="${esc(ui.lq || '')}" data-live="lq">
+      ${sel}
+      ${out || `<p class="empty">${t('nores')}</p>`}${R.length > lim && !(tab === 'voyages' && yr) ? `<button class="btn" data-a="ui" data-k="lLim" data-val="${lim + 300}">Afficher plus (${R.length - lim})</button>` : ''}`;
+  }
+
+  /* ---------- Webmaster ---------- */
+  function wmBulletins(W, mo) {
+    const P = W.bulletins?.prieures || [];
+    return P.map(pr => { const mot = (pr.motifs || [pr.nom]).map(norm); const F = (mo.files || []).filter(f => mot.some(m => norm(f.name).includes(m)));
+      const st = !F.length ? 'missing' : F.every(f => f.done) ? 'done' : 'received'; return { pr, F, st } });
+  }
+  function wmStats(W) {
+    const E = k => (W.etapes || []).find(e => e.key === k)?.items || [];
+    const mo = (W.mois || [])[0]; const b = mo ? wmBulletins(W, mo).filter(x => x.st === 'received').length : 0;
+    return { c: E('02_En cours').length, d: E('01_Déposé').length, b };
+  }
+  function vWebmaster() {
+    const W = src('webmaster'); if (!W) return `<h1>${t('webmaster')}</h1><div class="card"><b>${t('wm_none')}</b><button class="btn pri" data-a="tab" data-v="donnees">${t('load_now')}</button></div>`;
+    const d0 = today(), last = M.addDays(d0, 1).slice(8, 10) === '01';
+    const sec = k => { const e = (W.etapes || []).find(x => x.key === k); const I = (e?.items || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      return `<section class="sec"><h3>${t('wm_' + k.slice(0, 2))} · ${I.length}</h3><div class="list">${I.length ? I.map(x => { const url = spUrl('FSSPX/Webmaster CH - Documents/' + x.rel, x.dir); const pfr = /Artikel PFR/.test(x.rel);
+        return `<a class="row" href="${esc(url)}" target="_blank" rel="noopener"><div class="m"><b>${esc(x.name)}</b><small>${esc([x.grp, x.dir ? t('wm_files', { n: x.n }) : ''].filter(Boolean).join(' · '))}</small>${pfr ? `<small><span class="chip amber">${t('wm_pfr')}</span></small>` : ''}</div><div class="s"><span class="chip">${esc(ago(x.date))}</span></div></a>` }).join('') : `<div class="empty">${t('no_entries')}</div>`}</div></section>` };
+    const bul = (W.mois || []).map((mo, mi) => { const R = wmBulletins(W, mo); const lab = mo.m.replace('_', '-');
+      return `<section class="sec"><h3>${esc(t('wm_bulletins', { m: fmtD(lab + '-01', { month: 'long', year: 'numeric' }) }))}</h3><div class="list">${R.map(r => `<div class="row"><div class="m"><b>${esc(r.pr.nom)}</b>${r.F.length ? `<small>${esc(r.F.map(f => f.name).join(' · '))}</small>` : ''}${r.pr.note ? `<small>${esc(r.pr.note)}</small>` : ''}</div><div class="s"><span class="chip ${r.st === 'done' ? 'ok' : r.st === 'received' ? 'amber' : mi ? '' : 'red'}">${r.st === 'missing' && mi ? t('wm_notyet') : t('wm_' + r.st)}</span></div></div>`).join('')}</div></section>` }).join('');
+    return `<h1>${t('webmaster')}</h1>${last ? `<p class="note warn">${t('wm_vorwort')}</p>` : ''}${sec('02_En cours')}${sec('01_Déposé')}${bul}${sec('05_En attente')}${sec('04_Publiés')}`;
+  }
+
+  function vMore() {
+    const tile = (v, icon, label) => `<button class="tile" data-a="go" data-v="${v}">${ICON[icon]}<b>${t(label)}</b></button>`;
+    return `<h1>${t('more')}</h1><div class="grid">${tile('lefebvre', 'book', 'lefebvre')}${tile('webmaster', 'link', 'webmaster')}${tile('intentions', 'cross', 'intentions')}${tile('projets', 'flag', 'projets')}${tile('dossiers', 'folder', 'dossiers')}${tile('donnees', 'data', 'data')}
+      ${window.WIL_URL ? `<a class="tile" href="${window.WIL_URL}" target="_blank" rel="noopener">${ICON.link}<b>${t('go_wil')}</b><small>${t('go_wil_txt')}</small></a>` : ''}</div>`;
+  }
+
+  /* (2026-11-09) Porte d'entrée : sans la clé de liaison (lien du code QR), seulement une page « accès privé ».
+     La clé est vérifiée réellement (signature du paquet chiffré tibo-data.bin). */
+  const TOR = 'mytibo-tor';
+  async function torCheck(b, k) {
+    if (b.length < 100 || String.fromCharCode(b[0], b[1], b[2]) !== 'MT1') return false;
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(k), 'PBKDF2', false, ['deriveBits']);
+    const km = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: b.slice(3, 19), iterations: 100000, hash: 'SHA-256' }, base, 512));
+    const mk = await crypto.subtle.importKey('raw', km.slice(32), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    return crypto.subtle.verify('HMAC', mk, b.slice(b.length - 32), b.slice(0, b.length - 32));
+  }
+  async function torVault() { /* seulement un Natel vraiment installé (coffre présent) entre sans lien */
+    try { if (!indexedDB.databases) return false; const L = await indexedDB.databases(); if (!L.some(d => d && d.name === 'natel-mytibo')) return false;
+      return await new Promise(res => { const r = indexedDB.open('natel-mytibo'); r.onupgradeneeded = () => { try { r.transaction.abort() } catch (e) { } res(false) };
+        r.onerror = () => res(false); r.onsuccess = () => { const db = r.result; try { if (!db.objectStoreNames.contains('kv')) { db.close(); return res(false) } const q = db.transaction('kv').objectStore('kv').get('vault'); q.onsuccess = () => { db.close(); res(!!(q.result && q.result.ct)) }; q.onerror = () => { db.close(); res(false) } } catch (e) { try { db.close() } catch (e2) { } res(false) } } }) } catch (e) { } return false }
+  function torDoor(why) {
+    const fr = { none: 'Page privée.', bad: 'Ce lien n’est pas (ou plus) valable.', net: 'Pas de connexion Internet – la première ouverture en a besoin.' }[why];
+    document.title = 'Privé';
+    document.getElementById('app').innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:#eef1f4;font:16px/1.5 system-ui,'Segoe UI',sans-serif;color:#1d2530"><div style="max-width:420px;text-align:center"><div style="font:600 21px Georgia,serif;color:#2b4a66;margin-bottom:12px">Accès privé · Privater Zugang</div><p style="margin:0">${fr}</p></div></div>`;
+    return false;
+  }
+  async function torOpen() {
+    const m = location.hash.match(/lien=([A-Za-z0-9-]{24,40})/);
+    if (m) {
+      const k = m[1].toUpperCase().replace(/[^A-Z0-9]/g, '');
+      let r; try { r = await fetch('tibo-data.bin?t=' + Date.now(), { cache: 'no-store' }) } catch (e) { return torDoor('net') }
+      if (r.ok && await torCheck(new Uint8Array(await r.arrayBuffer()), k)) { try { localStorage.setItem(TOR, '1') } catch (e) { } return true }
+      try { history.replaceState(null, '', location.pathname) } catch (e) { }
+      return torDoor('bad');
+    }
+    let f = null; try { f = localStorage.getItem(TOR) } catch (e) { }
+    if (f || await torVault()) return true;
+    return torDoor('none');
+  }
+  torOpen().then(ok => { if (!ok) return;
+  M.init({
+    bundle: 'MyTibo-Natel.json', autoSync: 'tibo-data.bin', notesRepo: 'Fatibo-CH/fatibo-ch.github.io', id: 'mytibo', name: 'My Tibo', langs: ['fr'], T, logo: window.LOGO,
+    sources: [{ key: 'carnet', label: 'src_carnet', where: 'src_carnet_where' }, { key: 'intentions', label: 'src_int', where: 'src_int_where' }, { key: 'frais', label: 'src_frais', where: 'src_frais_where' }, { key: 'projets', label: 'src_projets', where: 'src_projets_where' }, { key: 'lf_photos', label: 'src_lf', where: 'src_lf_where' }, { key: 'webmaster', label: 'src_wm', where: 'src_wm_where' }],
+    onImport() { LF = null }, onLock() { LF = null },
+    detect,
+    freshness() { const sa = M.st && (M.st.syncMade || M.st.syncAt); if (sa) { const d = new Date(sa), iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); return esc((iso === today()) ? t('fresh_today', { h: d.toTimeString().slice(0, 5) }) : t('fresh_at', { d: fmtD(iso), h: d.toTimeString().slice(0, 5) })) } const i = srcInfo('carnet') || srcInfo('frais'); return i ? 'Données du ' + esc(fmtD((i.fileDate || i.importedAt).slice(0, 10))) : 'Pater Thibaud Favre' },
+    tabs: [{ v: 'home', icon: 'home', label: 'home' }, { v: 'contacts', icon: 'phone', label: 'contacts' }, { v: 'frais', icon: 'cash', label: 'frais' }, { v: 'notes', icon: 'note', label: 'notes' }, { v: 'more', icon: 'more', label: 'more' }],
+    tabOf: { contact: 'contacts' },
+    noteDomains: { intentions: 'nd_intentions', contacts: 'nd_contacts', frais: 'nd_frais', projets: 'nd_projets', apostolat: 'nd_apostolat', perso: 'nd_perso' },
+    views: { intentions: vIntentions, lefebvre: vLefebvre, webmaster: vWebmaster, home: vHome, contacts: vContacts, contact: vContact, frais: vFrais, projets: vProjets, more: vMore },
+    actions: { fqsend() { return frSend() }, frundo(el) { return frUndo(el) }, iqdite() { return iqDite() }, iqnew() { return iqNew() }, intok(el) { return intNote(el, 'dite') }, intno(el) { return intNote(el, 'non') }, intundo(el) { return intUndo(el) }, lfyear(el) { ui.lt = 'voyages'; ui.ly = el.dataset.v; M.go('lefebvre') }, qsearch() { ui.cq = document.getElementById('hq').value; M.go('contacts') } }
+  });
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'hq') { e.preventDefault(); ui.cq = e.target.value; M.go('contacts') } });
+})();
+
+</script>
+</body></html>
